@@ -1,0 +1,6 @@
+# Generic zig ignore
+.zig-cache/
+zig-out/
+
+# Parser
+antlr4
