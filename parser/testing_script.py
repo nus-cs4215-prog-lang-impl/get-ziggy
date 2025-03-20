@@ -11,8 +11,8 @@ from RustLexer import RustLexer
 from RustParser import RustParser
 import traceback
 import time
-examples_clean = [l.path for l in os.scandir('../examples/quick') if l.name.endswith('.rs')]
-examples_tree = [l.path for l in os.scandir('../examples/quick') if l.name.endswith('.rs.tree')]
+examples_clean = [l.path for l in os.scandir('./examples/quick') if l.name.endswith('.rs')]
+examples_tree = [l.path for l in os.scandir('./examples/quick') if l.name.endswith('.rs.tree')]
 
 def test_grammar(filepath, should_pass = True):
     inputstream = FileStream(filepath,encoding='utf-8')
