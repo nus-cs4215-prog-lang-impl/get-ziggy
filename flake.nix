@@ -31,27 +31,23 @@
         '';
       };
 
-      packages.docker = pkgs.dockerTools.buildImage {
+      packages.docker = pkgs.dockerTools.buildLayeredImage {
         name = "zig-antlr-shell";
         tag = "latest";
-        copyToRoot = pkgs.buildEnv {
-          name = "image-root";
-          paths =
-            devPackages
-            ++ [
-              pkgs.bash
-              pkgs.busybox
-            ];
-          pathsToLink = ["/bin" "/lib" "/lib/python3.12/site-packages"];
-        };
-        runAsRoot = ''
-          #!${pkgs.runtimeShell}
-          mkdir -p /app
-          cp -r ${./.}/* /app/
+        contents =
+          devPackages
+          ++ [
+            pkgs.bash
+            pkgs.busybox
+          ];
 
-          # Ensure Python can find the ANTLR runtime
-          export PYTHONPATH="${pkgs.python312Packages.antlr4-python3-runtime}/${pkgs.python312.sitePackages}:$PYTHONPATH"
+        # Create app directory and copy project files
+        extraCommands = ''
+          # Create app directory with proper permissions
+          mkdir -m 0755 -p app
+          cp -r ${./.}/* app/
         '';
+
         config = {
           Cmd = ["bash"];
           WorkingDir = "/app";
