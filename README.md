@@ -33,11 +33,14 @@ nix develop .
 Or, if you want a docker container, run:
 
 ```bash
+docker run -it ghcr.io/nus-cs4215-prog-lang-impl/get-ziggy
+```
+
+### Building the docker image from source
+
+```bash
 nix build .#docker
 docker load < result
 docker run -it zig-antlr-shell
 ```
 
-## TODO
-
-- [ ] Build docker image and send to ghcr.io
