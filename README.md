@@ -36,6 +36,12 @@ Or, if you want a docker container, run:
 docker run -it ghcr.io/nus-cs4215-prog-lang-impl/get-ziggy
 ```
 
+If you want to test your local changes in docker, do:
+
+```bash
+docker run -it -v $(pwd):/app ghcr.io/nus-cs4215-prog-lang-impl/get-ziggy
+```
+
 ### Building the docker image from source
 
 ```bash
