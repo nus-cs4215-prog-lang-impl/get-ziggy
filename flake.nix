@@ -16,8 +16,6 @@
 
       devPackages = with pkgs; [
         antlr4
-        bash
-        busybox
         python312
         python312Packages.antlr4-python3-runtime
         python312Packages.pip
@@ -38,7 +36,12 @@
         tag = "latest";
         copyToRoot = pkgs.buildEnv {
           name = "image-root";
-          paths = devPackages;
+          paths =
+            devPackages
+            ++ [
+              pkgs.bash
+              pkgs.busybox
+            ];
           pathsToLink = ["/bin" "/lib" "/lib/python3.12/site-packages"];
         };
         runAsRoot = ''
