@@ -4,3 +4,7 @@ zig-out/
 
 # Parser
 antlr4
+.aider*
+.env
+.direnv
+result
