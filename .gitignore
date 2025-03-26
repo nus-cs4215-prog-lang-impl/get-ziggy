@@ -8,3 +8,6 @@ antlr4
 .env
 .direnv
 result
+
+# Python
+__pycache__
