@@ -1,10 +1,12 @@
 from antlr4 import *
-from io import StringIO
 from RustLexer import RustLexer
 from RustParser import RustParser
+from antlr4.tree.Tree import TerminalNode
+
 import traceback
 import argparse
 import json
+from io import StringIO
 
 
 def parse_file(filepath):
@@ -17,8 +19,8 @@ def parse_file(filepath):
     result = None
     try:
         tree = parser.crate()
-        print(tree.toStringTree())
-        result = to_json(tree)
+        print(tree.toStringTree(parser.ruleNames))
+        result = to_json(tree, parser.ruleNames)
     except Exception as e:
         output.write("\n" * 2)
         output.write(" *" * 10)
@@ -33,43 +35,46 @@ def parse_file(filepath):
     return result
 
 
-def to_json(tree):
-    # Convert parse tree to JSON
-    def traverse(node):
-        if isinstance(node, TerminalNode):
-            return {
-                "text": str(node),
-                "type": "TerminalNode",
-                "children": [],
-            }
-        else:
-            children = []
-            for i in range(node.getChildCount()):
-                children.append(traverse(node.getChild(i)))
+def exclude_token(token_text):
+    exclude = ["{", "}", ";"]
+    return token_text in exclude
 
-            node_text = node.getText()
-            try:
-                node_type = node.getType()
-            except:
-                node_type = "undefined"
 
-            return {
-                "text": node_text,
-                "type": node_type,
-                "children": children,
-            }
+def to_json(node, rule_names):
+    """
+    Convert parse tree to structured JSON format including:
+    - Syntactic structure (rules)
+    - Token information (text, type)
+    - Rust type (rule name from parser)
+    """
+    if isinstance(node, TerminalNode) and (not exclude_token(node.getSymbol().text)):
+        token = node.getSymbol()
+        return {
+            "text": token.text,
+            "token_type": RustLexer.symbolicNames[token.type],  # Token name
+        }
 
-    return json.dumps(traverse(tree), indent=2)
+    elif isinstance(node, ParserRuleContext):
+        children = [
+            to_json(node.getChild(i), rule_names) for i in range(node.getChildCount())
+        ]
+        return {
+            "rule": rule_names[node.getRuleIndex()],  # Get rule name
+            "rust_type": node.__class__.__name__,  # Class name (may indicate Rust type)
+            "children": children,
+        }
+
+    return None
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Choose Rust program to parse")
-    parser.add_argument("--filepath", type=str, help="Filepath of file to be parsed")
+    parser.add_argument("-f", type=str, help="Filepath of file to be parsed")
     args = parser.parse_args()
 
-    res = parse_file(args.filepath)
-    if res:
-        with open(f"./parsed_hiii.json", "w") as f:
-            f.write(res)
+    syntax_tree = parse_file(args.f)
+    if syntax_tree:
+        with open("rust_parse_tree.json", "w", encoding="utf-8") as f:
+            json.dump(syntax_tree, f, indent=2)
     else:
-        print(f"ERROR response is not created {res}")
+        print(f"ERROR response is not created {syntax_tree}")
