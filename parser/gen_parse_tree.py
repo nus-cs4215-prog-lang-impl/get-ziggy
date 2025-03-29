@@ -74,7 +74,9 @@ if __name__ == "__main__":
 
     syntax_tree = parse_file(args.f)
     if syntax_tree:
-        with open("rust_parse_tree.json", "w", encoding="utf-8") as f:
+        # NOTE: if multple files with same name but diff dir are parsed then silent conflict
+        out_filename = (args.f.split("/")[-1]).split(".")[0]
+        with open(f"../out_parse/{out_filename}.json", "w", encoding="utf-8") as f:
             json.dump(syntax_tree, f, indent=2)
     else:
         print(f"ERROR response is not created {syntax_tree}")
