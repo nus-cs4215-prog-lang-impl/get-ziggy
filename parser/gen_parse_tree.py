@@ -41,8 +41,25 @@ def exclude_token(token_text):
 
 
 def is_allowable(rule_name):
-    allow = ["crate"]
+    allow = ["crate", "item", "visItem"]
     return rule_name in allow
+
+
+def get_pattern_id(node, rule_names):
+    if rule_names[node.getRuleIndex()] == "identifier":
+        return node.getChild(0)
+    else:
+        return get_pattern_id(node.getChild(0), rule_names)
+
+
+def get_fn_params(node, rule_names):
+    out = []
+    for i in range(0, node.getChildCount(), 2):
+        param = node.getChild(i)
+        id = get_pattern_id(param.getChild(0), rule_names).getSymbol()
+        out.append({"nam": id.text, "type": param.getChild(2)})
+
+    return out
 
 
 def to_json(node, rule_names):
@@ -52,7 +69,6 @@ def to_json(node, rule_names):
     - Token information (text, type)
     - Rust type (rule name from parser)
     """
-    rule_name = rule_names[node.getRuleIndex()]
     if isinstance(node, TerminalNode) and (not exclude_token(node.getSymbol().text)):
         token = node.getSymbol()
         return {
@@ -62,8 +78,17 @@ def to_json(node, rule_names):
         }
 
     elif isinstance(node, ParserRuleContext):
-        if rule_name == "let":
-            pass
+        rule_name = rule_names[node.getRuleIndex()]
+
+        if rule_name == "function_":
+            fun_name = node.getChild(2).getChild(0)
+            params = get_fn_params(node.getChild(4), rule_names)
+            return {
+                "tag": "fun",
+                "nam": fun_name,
+                "params": params,
+                "body": to_json(node.getChild(6), rule_names),
+            }
 
         elif is_allowable(rule_name):
             children = [
