@@ -62,6 +62,44 @@ def get_fn_params(node, rule_names):
     return out
 
 
+def is_expr_operator(node):
+    # Prefix
+    borrow = ["&", "&&"]
+    borrow_attr = ["", "mut", "raw const", "raw mut"]
+    deref = ["*"]
+    neg = ["!", "-"]
+
+    # Infix
+    comp = ["==", "!=", ">", "<", ">=", "<="]
+    arith = ["+", "-", "*", "/", "%", "^", "|", "&", "<<", ">>"]
+    lazy_bool = ["||", "&&"]
+    type_cast = ["as"]
+    # TODO: CompoundAssignmentExpression (e.g. +=, *=, ...)
+
+    # Postfix
+    question = ["?"]
+
+    infix = node.getChild(2)
+
+    return infix in comp
+
+
+def trim_expr(node, rule_names):
+    rule_name = rule_names[node.getRuleIndex()]
+    if rule_name == "expression":
+        pass
+    elif rule_name == "assignmentExpression":
+        assign = ["="]
+        pass
+    elif rule_name == "literalExpression":
+        return {"tag": "lit", "val": node.getChild(0).getSymbol().text}
+    elif rule_name == "expressionWithBlock":
+        # WARN: Circular recursion, BE CAREFUL!
+        return trim_tree(node.getChild(0), rule_names)
+    else:
+        raise NotImplementedError("Expression type not implemented")
+
+
 def trim_tree(node, rule_names):
     """
     Convert parse tree to structured JSON format including:
@@ -71,6 +109,7 @@ def trim_tree(node, rule_names):
     """
     if isinstance(node, TerminalNode) and (not exclude_token(node.getSymbol().text)):
         token = node.getSymbol()
+        raise AttributeError("don't want literals")
         return {
             "tag": "lit",
             "text": token.text,
@@ -100,7 +139,7 @@ def trim_tree(node, rule_names):
                 ],
             }
         elif rule_name == "expressionStatement":
-            pass
+            return trim_expr(node.getChild(0), rule_names)
         elif rule_name == "letStatement":
             pass
         elif rule_name == "macroInvocationSemi":
