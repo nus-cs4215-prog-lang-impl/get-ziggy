@@ -36,8 +36,13 @@ def parse_file(filepath):
 
 
 def exclude_token(token_text):
-    exclude = ["{", "}", ";"]
+    exclude = [";"]
     return token_text in exclude
+
+
+def is_allowable(rule_name):
+    allow = ["crate"]
+    return rule_name in allow
 
 
 def to_json(node, rule_names):
@@ -47,22 +52,41 @@ def to_json(node, rule_names):
     - Token information (text, type)
     - Rust type (rule name from parser)
     """
+    rule_name = rule_names[node.getRuleIndex()]
     if isinstance(node, TerminalNode) and (not exclude_token(node.getSymbol().text)):
         token = node.getSymbol()
         return {
+            "tag": "lit",
             "text": token.text,
             "token_type": RustLexer.symbolicNames[token.type],  # Token name
         }
 
     elif isinstance(node, ParserRuleContext):
-        children = [
-            to_json(node.getChild(i), rule_names) for i in range(node.getChildCount())
-        ]
-        return {
-            "rule": rule_names[node.getRuleIndex()],  # Get rule name
-            "rust_type": node.__class__.__name__,  # Class name (may indicate Rust type)
-            "children": children,
-        }
+        if rule_name == "let":
+            pass
+
+        elif is_allowable(rule_name):
+            children = [
+                to_json(node.getChild(i), rule_names)
+                for i in range(node.getChildCount())
+            ]
+
+            return {
+                "rule": rule_name,  # Get rule name
+                "rust_type": node.__class__.__name__,  # Class name (may indicate Rust type)
+                "children": children,
+            }
+        else:
+            raise NotImplementedError(f"Rule name {rule_name} not implemented in parse")
+            # children = [
+            #     to_json(node.getChild(i), rule_names) for i in range(node.getChildCount())
+            # ]
+            #
+            # return {
+            #     "rule": rule_name,  # Get rule name
+            #     "rust_type": node.__class__.__name__,  # Class name (may indicate Rust type)
+            #     "children": children,
+            # }
 
     return None
 
