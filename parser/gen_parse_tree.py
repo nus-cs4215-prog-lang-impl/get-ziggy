@@ -20,7 +20,7 @@ def parse_file(filepath):
     try:
         tree = parser.crate()
         print(tree.toStringTree(parser.ruleNames))
-        result = to_json(tree, parser.ruleNames)
+        result = trim_tree(tree, parser.ruleNames)
     except Exception as e:
         output.write("\n" * 2)
         output.write(" *" * 10)
@@ -36,7 +36,7 @@ def parse_file(filepath):
 
 
 def exclude_token(token_text):
-    exclude = [";"]
+    exclude = [";", "<EOF>", "}"]
     return token_text in exclude
 
 
@@ -62,7 +62,7 @@ def get_fn_params(node, rule_names):
     return out
 
 
-def to_json(node, rule_names):
+def trim_tree(node, rule_names):
     """
     Convert parse tree to structured JSON format including:
     - Syntactic structure (rules)
@@ -81,18 +81,34 @@ def to_json(node, rule_names):
         rule_name = rule_names[node.getRuleIndex()]
 
         if rule_name == "function_":
-            fun_name = node.getChild(2).getChild(0)
+            fun_name = node.getChild(2).getChild(0).getSymbol().text
             params = get_fn_params(node.getChild(4), rule_names)
             return {
                 "tag": "fun",
                 "nam": fun_name,
                 "params": params,
-                "body": to_json(node.getChild(6), rule_names),
+                "body": trim_tree(node.getChild(6), rule_names),
             }
+        elif rule_name == "blockExpression":
+            return {"tag": "blk", "body": trim_tree(node.getChild(1), rule_names)}
+        elif rule_name == "statements":
+            return {
+                "tag": "seq",
+                "stmts": [
+                    trim_tree(node.getChild(i).getChild(0), rule_names)
+                    for i in range(node.getChildCount())
+                ],
+            }
+        elif rule_name == "expressionStatement":
+            pass
+        elif rule_name == "letStatement":
+            pass
+        elif rule_name == "macroInvocationSemi":
+            raise NotImplementedError("Won't implement or macro statements")
 
         elif is_allowable(rule_name):
             children = [
-                to_json(node.getChild(i), rule_names)
+                trim_tree(node.getChild(i), rule_names)
                 for i in range(node.getChildCount())
             ]
 
@@ -103,17 +119,8 @@ def to_json(node, rule_names):
             }
         else:
             raise NotImplementedError(f"Rule name {rule_name} not implemented in parse")
-            # children = [
-            #     to_json(node.getChild(i), rule_names) for i in range(node.getChildCount())
-            # ]
-            #
-            # return {
-            #     "rule": rule_name,  # Get rule name
-            #     "rust_type": node.__class__.__name__,  # Class name (may indicate Rust type)
-            #     "children": children,
-            # }
 
-    return None
+    return ""
 
 
 if __name__ == "__main__":
@@ -126,6 +133,7 @@ if __name__ == "__main__":
         # NOTE: if multple files with same name but diff dir are parsed then silent conflict
         out_filename = (args.f.split("/")[-1]).split(".")[0]
         with open(f"../out_parse/{out_filename}.json", "w", encoding="utf-8") as f:
+            print(syntax_tree)
             json.dump(syntax_tree, f, indent=2)
     else:
         print(f"ERROR response is not created {syntax_tree}")
