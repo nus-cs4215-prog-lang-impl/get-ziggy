@@ -62,13 +62,20 @@ def get_fn_params(node, rule_names):
     return out
 
 
-def is_expr_operator(node):
+def expr_pre_post_operator(node):
     # Prefix
     borrow = ["&", "&&"]
     borrow_attr = ["", "mut", "raw const", "raw mut"]
     deref = ["*"]
     neg = ["!", "-"]
 
+    # Postfix
+    question = ["?"]
+
+    return (1, 1, 1)
+
+
+def expr_infix_operator(node):
     # Infix
     comp = ["==", "!=", ">", "<", ">=", "<="]
     arith = ["+", "-", "*", "/", "%", "^", "|", "&", "<<", ">>"]
@@ -76,21 +83,49 @@ def is_expr_operator(node):
     type_cast = ["as"]
     # TODO: CompoundAssignmentExpression (e.g. +=, *=, ...)
 
-    # Postfix
-    question = ["?"]
+    op = node.getChild(1)
+    assert isinstance(op, TerminalNode)
 
-    infix = node.getChild(2)
+    infix = op.getSymbol().text
+    op_type = ""
 
-    return infix in comp
+    if infix in comp:
+        op_type = "comparop"
+    elif infix in arith:
+        op_type = "arithop"
+    elif infix in lazy_bool:
+        op_type = "log"
+    elif infix in type_cast:
+        op_type = "typecastop"
+    else:
+        raise NotImplementedError(f"infix op:::{infix}{type(infix)}:::not implemented")
+
+    return op_type, infix, node.getChild(0), node.getChild(2)
 
 
 def trim_expr(node, rule_names):
     rule_name = rule_names[node.getRuleIndex()]
     if rule_name == "expression":
-        pass
+        if node.getChildCount() == 3:
+            op, op_type, lhs, rhs = expr_infix_operator(node)
+            return {
+                "tag": op_type,
+                "sym": op,
+                "first": trim_expr(lhs, rule_names),
+                "second": trim_expr(rhs, rule_names),
+            }
+        elif node.getChildCount() == 2:
+            op, op_type, lhs = expr_pre_post_operator(node)
+            return {
+                "tag": op_type,
+                "sym": op,
+                "first": trim_expr(lhs, rule_names),
+            }
+        else:
+            return trim_expr(node.getChild(0), rule_names)
+
     elif rule_name == "assignmentExpression":
-        assign = ["="]
-        pass
+        raise NotImplementedError("Expression type not implemented")
     elif rule_name == "literalExpression":
         return {"tag": "lit", "val": node.getChild(0).getSymbol().text}
     elif rule_name == "expressionWithBlock":
