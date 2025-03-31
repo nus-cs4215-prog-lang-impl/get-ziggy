@@ -82,10 +82,11 @@ def expr_infix_operator(node):
     arith = ["+", "-", "*", "/", "%", "^", "|", "&", "<<", ">>"]
     lazy_bool = ["||", "&&"]
     type_cast = ["as"]
+    assign = ["="]
     # TODO: CompoundAssignmentExpression (e.g. +=, *=, ...)
 
     op = node.getChild(1)
-    assert isinstance(op, TerminalNode)
+    assert isinstance(op, TerminalNode), "operator is not TerminalNode"
 
     infix = op.getSymbol().text
     op_type = ""
@@ -98,6 +99,8 @@ def expr_infix_operator(node):
         op_type = "log"
     elif infix in type_cast:
         op_type = "typecastop"
+    elif infix in assign:
+        op_type = "assign"
     else:
         raise NotImplementedError(f"infix op:::{infix}:::not implemented")
 
@@ -106,8 +109,10 @@ def expr_infix_operator(node):
 
 def trim_expr(node, rule_names):
     rule_name = rule_names[node.getRuleIndex()]
+
     if rule_name == "expression":
         if node.getChildCount() == 3:
+            # TODO: do operator precedence for infix
             op, op_type, lhs, rhs = expr_infix_operator(node)
             return {
                 "tag": op_type,
@@ -126,13 +131,22 @@ def trim_expr(node, rule_names):
             return trim_expr(node.getChild(0), rule_names)
 
     elif rule_name == "assignmentExpression":
+        # NOTE: for some reason an assignment expr is not triggered just regular expr
         raise NotImplementedError("Expression type not implemented")
+
+    elif rule_name == "pathExpression":
+        path = node.getChild(0)
+        assert path.getChildCount() == 1, "Var name path must be of len 1"
+        return path.getChild(0).getChild(0).getChild(0).getChild(0).getSymbol().text
+
     elif rule_name == "literalExpression":
         return {"tag": "lit", "val": node.getChild(0).getSymbol().text}
+
     elif rule_name == "expressionWithBlock":
         raise NotImplementedError("implement a return hatch")
         # WARN: Circular recursion, BE CAREFUL!
-        return trim_tree(node.getChild(0), rule_names)
+        # return trim_tree(node.getChild(0), rule_names)
+
     else:
         raise NotImplementedError("Expression type not implemented")
 
