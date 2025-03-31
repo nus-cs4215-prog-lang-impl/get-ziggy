@@ -147,7 +147,7 @@ def trim_tree(node, rule_names):
     """
     if isinstance(node, TerminalNode) and (not exclude_token(node.getSymbol().text)):
         token = node.getSymbol()
-        raise AttributeError("don't want literals")
+        raise AttributeError(f"don't want literals:::::{token.text}::::")
         return {
             "tag": "lit",
             "text": token.text,
@@ -159,13 +159,16 @@ def trim_tree(node, rule_names):
 
         if rule_name == "function_":
             fun_name = node.getChild(2).getChild(0).getSymbol().text
-            params = get_fn_params(node.getChild(4), rule_names)
-            return {
-                "tag": "fun",
-                "nam": fun_name,
-                "params": params,
-                "body": trim_tree(node.getChild(6), rule_names),
-            }
+
+            para_node = node.getChild(4)
+            if isinstance(para_node, TerminalNode):
+                params = []
+                body = trim_tree(node.getChild(5), rule_names)
+            else:
+                params = get_fn_params(para_node, rule_names)
+                body = trim_tree(node.getChild(6), rule_names)
+
+            return {"tag": "fun", "nam": fun_name, "params": params, "body": body}
         elif rule_name == "blockExpression":
             return {"tag": "blk", "body": trim_tree(node.getChild(1), rule_names)}
         elif rule_name == "statements":
@@ -189,7 +192,6 @@ def trim_tree(node, rule_names):
                 nam = lhs_node.getChild(0).getChild(0).getSymbol().text
 
             rhs_node = trim_tree(node.getChild(3), rule_names)
-            print(nam, is_mut, rhs_node)
             return {
                 "tag": "assign",
                 "is_mut": is_mut,
