@@ -111,7 +111,13 @@ def trim_expr(node, rule_names):
     rule_name = rule_names[node.getRuleIndex()]
 
     if rule_name == "expression":
-        if node.getChildCount() == 3:
+        if (
+            node.getChildCount() >= 3
+            and isinstance(node.getChild(1), TerminalNode)
+            and node.getChild(1).getSymbol().text == "("
+        ):
+            raise NotImplementedError("Fn call captured")
+        elif node.getChildCount() == 3:
             # TODO: do operator precedence for infix
             op, op_type, lhs, rhs = expr_infix_operator(node)
             return {
