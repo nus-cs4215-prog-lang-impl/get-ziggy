@@ -107,6 +107,13 @@ def expr_infix_operator(node):
     return op_type, infix, node.getChild(0), node.getChild(2)
 
 
+def get_call_params(all_args, rule_names):
+    args = []
+    for a in range(0, all_args.getChildCount(), 2):
+        args.append(trim_expr(all_args.getChild(a), rule_names))
+    return args
+
+
 def trim_expr(node, rule_names):
     rule_name = rule_names[node.getRuleIndex()]
 
@@ -116,7 +123,13 @@ def trim_expr(node, rule_names):
             and isinstance(node.getChild(1), TerminalNode)
             and node.getChild(1).getSymbol().text == "("
         ):
-            raise NotImplementedError("Fn call captured")
+            fn_name = trim_expr(node.getChild(0), rule_names)
+            return {
+                "tag": "app",
+                "nam": fn_name,
+                "args": get_call_params(node.getChild(2), rule_names),
+            }
+
         elif node.getChildCount() == 3:
             # TODO: do operator precedence for infix
             op, op_type, lhs, rhs = expr_infix_operator(node)
