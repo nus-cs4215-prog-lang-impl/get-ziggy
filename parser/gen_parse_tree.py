@@ -62,6 +62,13 @@ def get_fn_params(node, rule_names):
     return out
 
 
+def get_call_params(all_args, rule_names):
+    args = []
+    for a in range(0, all_args.getChildCount(), 2):
+        args.append(trim_expr(all_args.getChild(a), rule_names))
+    return args
+
+
 def expr_pre_post_operator(node):
     # Prefix
     borrow = ["&", "&&"]
@@ -82,6 +89,7 @@ def expr_infix_operator(node):
     arith = ["+", "-", "*", "/", "%", "^", "|", "&", "<<", ">>"]
     lazy_bool = ["||", "&&"]
     type_cast = ["as"]
+    # NOTE: antlr treats 'assignmentExpression' (from Rust grammar) as regular expr
     assign = ["="]
     # TODO: CompoundAssignmentExpression (e.g. +=, *=, ...)
 
@@ -107,19 +115,15 @@ def expr_infix_operator(node):
     return op_type, infix, node.getChild(0), node.getChild(2)
 
 
-def get_call_params(all_args, rule_names):
-    args = []
-    for a in range(0, all_args.getChildCount(), 2):
-        args.append(trim_expr(all_args.getChild(a), rule_names))
-    return args
-
-
 def trim_expr(node, rule_names):
     rule_name = rule_names[node.getRuleIndex()]
 
     if rule_name == "expression":
+        # NOTE: Heurisitc used for finding call expression as antlr tree
+        # does not yield call expression tag
         if (
             node.getChildCount() >= 3
+            and node.getChild(0)
             and isinstance(node.getChild(1), TerminalNode)
             and node.getChild(1).getSymbol().text == "("
         ):
@@ -149,10 +153,6 @@ def trim_expr(node, rule_names):
         else:
             return trim_expr(node.getChild(0), rule_names)
 
-    elif rule_name == "assignmentExpression":
-        # NOTE: for some reason an assignment expr is not triggered just regular expr
-        raise NotImplementedError("Expression type not implemented")
-
     elif rule_name == "pathExpression":
         path = node.getChild(0)
         assert path.getChildCount() == 1, "Var name path must be of len 1"
@@ -170,7 +170,7 @@ def trim_expr(node, rule_names):
         raise NotImplementedError("Expression type not implemented")
 
 
-# TODO: deal with identifiers
+# TODO: deal with identifiers properly
 def trim_tree(node, rule_names):
     """
     Convert parse tree to structured JSON format including:
