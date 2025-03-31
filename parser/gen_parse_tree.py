@@ -66,6 +66,7 @@ def expr_pre_post_operator(node):
     # Prefix
     borrow = ["&", "&&"]
     borrow_attr = ["", "mut", "raw const", "raw mut"]
+
     deref = ["*"]
     neg = ["!", "-"]
 
@@ -98,7 +99,7 @@ def expr_infix_operator(node):
     elif infix in type_cast:
         op_type = "typecastop"
     else:
-        raise NotImplementedError(f"infix op:::{infix}{type(infix)}:::not implemented")
+        raise NotImplementedError(f"infix op:::{infix}:::not implemented")
 
     return op_type, infix, node.getChild(0), node.getChild(2)
 
@@ -129,12 +130,14 @@ def trim_expr(node, rule_names):
     elif rule_name == "literalExpression":
         return {"tag": "lit", "val": node.getChild(0).getSymbol().text}
     elif rule_name == "expressionWithBlock":
+        raise NotImplementedError("implement a return hatch")
         # WARN: Circular recursion, BE CAREFUL!
         return trim_tree(node.getChild(0), rule_names)
     else:
         raise NotImplementedError("Expression type not implemented")
 
 
+# TODO: deal with identifiers
 def trim_tree(node, rule_names):
     """
     Convert parse tree to structured JSON format including:
@@ -173,10 +176,26 @@ def trim_tree(node, rule_names):
                     for i in range(node.getChildCount())
                 ],
             }
-        elif rule_name == "expressionStatement":
+        elif rule_name == "expressionStatement" or rule_name == "expression":
             return trim_expr(node.getChild(0), rule_names)
         elif rule_name == "letStatement":
-            pass
+            assert node.getChildCount() == 5
+            lhs_node = node.getChild(1).getChild(0).getChild(0)
+            if isinstance(lhs_node.getChild(0), TerminalNode):
+                is_mut = True
+                nam = lhs_node.getChild(1).getChild(0).getSymbol().text
+            else:
+                is_mut = False
+                nam = lhs_node.getChild(0).getChild(0).getSymbol().text
+
+            rhs_node = trim_tree(node.getChild(3), rule_names)
+            print(nam, is_mut, rhs_node)
+            return {
+                "tag": "assign",
+                "is_mut": is_mut,
+                "nam": nam,
+                "val": rhs_node,
+            }
         elif rule_name == "macroInvocationSemi":
             raise NotImplementedError("Won't implement or macro statements")
 
