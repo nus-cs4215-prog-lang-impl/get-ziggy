@@ -136,6 +136,7 @@ def trim_expr(node, rule_names):
 
         elif node.getChildCount() == 3:
             # TODO: do operator precedence for infix
+            # NOTE: Check footnote on precendence
             op, op_type, lhs, rhs = expr_infix_operator(node)
             return {
                 "tag": op_type,
@@ -265,3 +266,20 @@ if __name__ == "__main__":
             json.dump(syntax_tree, f, indent=2)
     else:
         print(f"ERROR response is not created {syntax_tree}")
+
+
+#
+#
+# NOTE: FOOTNOTE
+# - Operator precendence We don't impl
+# ---- We don't do it, cause the antlr parse tree is left to right recursive
+# (expression
+#     (expression (identifier y)) +
+#         (expression
+#             (expression
+#                 (expression (literalExpression 1))
+#                 *
+#                 (expression (literalExpression 2)))
+#                     / (expression (literalExpression 5))
+#         )
+# )
