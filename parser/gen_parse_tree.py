@@ -70,10 +70,10 @@ def get_call_params(all_args, rule_names):
 
 
 def expr_pre_post_operator(node):
-    assert node.getChildCount() == 2, "Assertion: pre/post fix OP must have 2 children"
     # Prefix
     borrow = ["&", "&&"]
-    borrow_attr = ["", "mut", "raw const", "raw mut"]
+    # NOTE: Don't support 'raw mut' or 'const mut' as they are macros
+    borrow_attr = ["mut"]
 
     deref = ["*"]
     neg = ["!", "-"]
@@ -84,14 +84,22 @@ def expr_pre_post_operator(node):
     op_type = ""
     if isinstance(node.getChild(0), TerminalNode):
         op = node.getChild(0).getSymbol().text
-        expr = node.getChild(1)
+        if node.getChildCount() > 2:
+            expr = node.getChild(2)
 
-        if op in borrow:
-            op_type = "borrow"
-        elif op in deref:
-            op_type = "deref"
-        elif op in neg:
-            op_type = "neg"
+            attr = node.getChild(1).getSymbol().text
+            if op in borrow and attr in borrow_attr:
+                op_type = "borrow mut"
+
+        else:
+            expr = node.getChild(1)
+
+            if op in borrow:
+                op_type = "borrow"
+            elif op in deref:
+                op_type = "deref"
+            elif op in neg:
+                op_type = "neg"
     else:
         op = node.getChild(1).getSymbol().text
         expr = node.getChild(0)
@@ -145,7 +153,6 @@ def expr_infix_operator(node):
 
 
 # TODO: for trimmming expr
-# 1. prefix expr
 def trim_expr(node, rule_names):
     rule_name = rule_names[node.getRuleIndex()]
 
@@ -179,6 +186,13 @@ def trim_expr(node, rule_names):
                 "nam": fn_name,
                 "args": get_call_params(node.getChild(2), rule_names),
             }
+        elif node.getChildCount() == 2 or isinstance(node.getChild(0), TerminalNode):
+            op, op_type, lhs = expr_pre_post_operator(node)
+            return {
+                "tag": op_type,
+                "sym": op,
+                "first": trim_expr(lhs, rule_names),
+            }
 
         elif node.getChildCount() == 3:
             if (
@@ -197,13 +211,7 @@ def trim_expr(node, rule_names):
                     "first": trim_expr(lhs, rule_names),
                     "second": trim_expr(rhs, rule_names),
                 }
-        elif node.getChildCount() == 2:
-            op, op_type, lhs = expr_pre_post_operator(node)
-            return {
-                "tag": op_type,
-                "sym": op,
-                "first": trim_expr(lhs, rule_names),
-            }
+
         else:
             return trim_expr(node.getChild(0), rule_names)
 
