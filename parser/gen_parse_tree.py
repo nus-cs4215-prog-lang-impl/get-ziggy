@@ -95,7 +95,6 @@ def expr_infix_operator(node):
     compound_assign = ["+=", "-=", "*=", "/=", "%=", "&=", "|=", "^=", "<<=", ">>="]
 
     op = node.getChild(1)
-    # assert isinstance(op, TerminalNode), "operator is not TerminalNode"
     if not isinstance(op, TerminalNode):
         assert isinstance(
             op.getChild(0), TerminalNode
@@ -136,7 +135,9 @@ def trim_expr(node, rule_names):
     if rule_name == "expression":
         # NOTE: Heurisitc used for finding call expression as antlr tree
         # does not yield call expression tag
-        assert node.getChildCount() >= 1, "'expression' tag has less than 1 children"
+        assert (
+            node.getChildCount() >= 1
+        ), "Assertion: 'expression' tag has less than 1 children"
 
         if isinstance(node.getChild(0), TerminalNode) and node.getChild(
             0
@@ -183,7 +184,7 @@ def trim_expr(node, rule_names):
 
     elif rule_name == "pathExpression":
         path = node.getChild(0)
-        assert path.getChildCount() == 1, "Var name path must be of len 1"
+        assert path.getChildCount() == 1, "Assertion: Var name path must be of len 1"
         return path.getChild(0).getChild(0).getChild(0).getChild(0).getSymbol().text
 
     elif rule_name == "literalExpression":
@@ -244,7 +245,7 @@ def trim_tree(node, rule_names):
         elif rule_name == "expressionStatement" or rule_name == "expression":
             return trim_expr(node.getChild(0), rule_names)
         elif rule_name == "letStatement":
-            assert node.getChildCount() == 5
+            assert node.getChildCount() == 5, "Assertion: Let statement has 5 children"
             lhs_node = node.getChild(1).getChild(0).getChild(0)
             if isinstance(lhs_node.getChild(0), TerminalNode):
                 is_mut = True
