@@ -94,13 +94,20 @@ def expr_infix_operator(node):
     # TODO: CompoundAssignmentExpression (e.g. +=, *=, ...)
 
     op = node.getChild(1)
-    assert isinstance(op, TerminalNode), "operator is not TerminalNode"
+    # assert isinstance(op, TerminalNode), "operator is not TerminalNode"
+    if not isinstance(op, TerminalNode):
+        assert isinstance(
+            op.getChild(0), TerminalNode
+        ), "Assertion: op needs to be at most one layer deep"
 
-    infix = op.getSymbol().text
+        infix = op.getChild(0).getSymbol().text
+    else:
+        infix = op.getSymbol().text
+
     op_type = ""
 
     if infix in comp:
-        op_type = "comparop"
+        op_type = "compop"
     elif infix in arith:
         op_type = "arithop"
     elif infix in lazy_bool:
