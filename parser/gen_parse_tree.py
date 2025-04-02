@@ -41,7 +41,7 @@ def exclude_token(token_text):
 
 
 def is_allowable(rule_name):
-    allow = ["crate", "item", "visItem"]
+    allow = ["item", "visItem"]
     return rule_name in allow
 
 
@@ -341,16 +341,19 @@ def trim_tree(node, rule_names):
         elif rule_name == "macroInvocationSemi":
             raise NotImplementedError("Won't implement or macro statements")
 
-        elif is_allowable(rule_name):
-            children = [
-                trim_tree(node.getChild(i), rule_names)
-                for i in range(node.getChildCount())
-            ]
+        elif rule_name in ["item", "visItem"]:
+            return trim_tree(node.getChild(0), rule_names)
 
+        elif rule_name == "crate":
             return {
-                "rule": rule_name,  # Get rule name
-                "rust_type": node.__class__.__name__,  # Class name (may indicate Rust type)
-                "children": children,
+                "tag": "blk",
+                "body": {
+                    "tag": "seq",
+                    "stmts": [
+                        trim_tree(node.getChild(i), rule_names)
+                        for i in range(node.getChildCount())
+                    ],
+                },
             }
         else:
             raise NotImplementedError(f"Rule name {rule_name} not implemented in parse")
