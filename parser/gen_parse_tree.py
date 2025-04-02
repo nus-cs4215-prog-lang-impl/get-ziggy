@@ -186,7 +186,10 @@ def trim_expr(node, rule_names):
                 "nam": fn_name,
                 "args": get_call_params(node.getChild(2), rule_names),
             }
-        elif node.getChildCount() == 2 or isinstance(node.getChild(0), TerminalNode):
+        elif node.getChildCount() == 2 or (
+            isinstance(node.getChild(0), TerminalNode)
+            and node.getChild(0).getSymbol().text in ["&", "&&"]
+        ):
             op, op_type, lhs = expr_pre_post_operator(node)
             return {
                 "tag": op_type,
@@ -342,6 +345,9 @@ def trim_tree(node, rule_names):
             raise NotImplementedError("Won't implement or macro statements")
 
         elif rule_name in ["item", "visItem"]:
+            assert (
+                node.getChildCount() == 1
+            ), "Assertion: :item and :visItem must have ONLY 1 child"
             return trim_tree(node.getChild(0), rule_names)
 
         elif rule_name == "crate":
