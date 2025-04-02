@@ -84,6 +84,7 @@ def expr_pre_post_operator(node):
 
 
 def expr_infix_operator(node):
+
     # Infix
     comp = ["==", "!=", ">", "<", ">=", "<="]
     arith = ["+", "-", "*", "/", "%", "^", "|", "&", "<<", ">>"]
@@ -91,18 +92,16 @@ def expr_infix_operator(node):
     type_cast = ["as"]
     # NOTE: antlr treats 'assignmentExpression' (from Rust grammar) as regular expr
     assign = ["="]
-    # TODO: CompoundAssignmentExpression (e.g. +=, *=, ...)
     compound_assign = ["+=", "-=", "*=", "/=", "%=", "&=", "|=", "^=", "<<=", ">>="]
 
     op = node.getChild(1)
-    if not isinstance(op, TerminalNode):
-        assert isinstance(
-            op.getChild(0), TerminalNode
-        ), "Assertion: op needs to be at most one layer deep"
-
+    infix = None
+    if op.getChildCount() == 1:
         infix = op.getChild(0).getSymbol().text
-    else:
+    elif op.getChildCount() == 0:
         infix = op.getSymbol().text
+    else:
+        assert True, "Assertion: op needs to be 0,1 or 3 layers deep"
 
     op_type = ""
 
@@ -164,14 +163,21 @@ def trim_expr(node, rule_names):
             }
 
         elif node.getChildCount() == 3:
-            # NOTE: Check footnote on precendence
-            op, op_type, lhs, rhs = expr_infix_operator(node)
-            return {
-                "tag": op_type,
-                "sym": op,
-                "first": trim_expr(lhs, rule_names),
-                "second": trim_expr(rhs, rule_names),
-            }
+            if (
+                isinstance(node.getChild(0), TerminalNode)
+                and node.getChild(0).getSymbol().text == "("
+                and node.getChild(2).getSymbol().text == ")"
+            ):
+                return trim_expr(node.getChild(1), rule_names)
+            else:
+                # NOTE: Check footnote on precendence
+                op, op_type, lhs, rhs = expr_infix_operator(node)
+                return {
+                    "tag": op_type,
+                    "sym": op,
+                    "first": trim_expr(lhs, rule_names),
+                    "second": trim_expr(rhs, rule_names),
+                }
         elif node.getChildCount() == 2:
             op, op_type, lhs = expr_pre_post_operator(node)
             return {
