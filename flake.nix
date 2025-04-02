@@ -16,6 +16,7 @@
 
       devPackages = with pkgs; [
         antlr4
+        jless
         python312
         python312Packages.antlr4-python3-runtime
         python312Packages.pip
