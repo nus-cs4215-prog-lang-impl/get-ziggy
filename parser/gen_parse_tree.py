@@ -92,6 +92,7 @@ def expr_infix_operator(node):
     # NOTE: antlr treats 'assignmentExpression' (from Rust grammar) as regular expr
     assign = ["="]
     # TODO: CompoundAssignmentExpression (e.g. +=, *=, ...)
+    compound_assign = ["+=", "-=", "*=", "/=", "%=", "&=", "|=", "^=", "<<=", ">>="]
 
     op = node.getChild(1)
     # assert isinstance(op, TerminalNode), "operator is not TerminalNode"
@@ -106,20 +107,22 @@ def expr_infix_operator(node):
 
     op_type = ""
 
-    if infix in comp:
-        op_type = "compop"
-    elif infix in arith:
-        op_type = "arithop"
+    if infix in arith:
+        op_type = "arith"
+    elif infix in comp:
+        op_type = "comp"
     elif infix in lazy_bool:
-        op_type = "log"
+        op_type = "logic"
     elif infix in type_cast:
-        op_type = "typecastop"
+        op_type = "typecast"
     elif infix in assign:
         op_type = "assign"
+    elif infix in compound_assign:
+        op_type = "compound_assign"
     else:
         raise NotImplementedError(f"infix op:::{infix}:::not implemented")
 
-    return op_type, infix, node.getChild(0), node.getChild(2)
+    return infix, op_type, node.getChild(0), node.getChild(2)
 
 
 # TODO: for trimmming expr
