@@ -115,13 +115,31 @@ def expr_infix_operator(node):
     return op_type, infix, node.getChild(0), node.getChild(2)
 
 
+# TODO: for trimmming expr
+# 1. prefix expr
+# 2. grouped expressions
+# 3. block expressions
+# 4. if expressions
 def trim_expr(node, rule_names):
     rule_name = rule_names[node.getRuleIndex()]
 
     if rule_name == "expression":
         # NOTE: Heurisitc used for finding call expression as antlr tree
         # does not yield call expression tag
-        if (
+        assert node.getChildCount() >= 1, "'expression' tag has less than 1 children"
+
+        if isinstance(node.getChild(0), TerminalNode) and node.getChild(
+            0
+        ).getSymbol().text in ["return", "break", "continue"]:
+            return {
+                "tag": node.getChild(0).getSymbol().text,
+                "body": (
+                    None
+                    if node.getChildCount() != 2
+                    else trim_expr(node.getChild(1), rule_names)
+                ),
+            }
+        elif (
             node.getChildCount() >= 3
             and node.getChild(0)
             and isinstance(node.getChild(1), TerminalNode)
@@ -135,7 +153,6 @@ def trim_expr(node, rule_names):
             }
 
         elif node.getChildCount() == 3:
-            # TODO: do operator precedence for infix
             # NOTE: Check footnote on precendence
             op, op_type, lhs, rhs = expr_infix_operator(node)
             return {
@@ -191,6 +208,7 @@ def trim_tree(node, rule_names):
     elif isinstance(node, ParserRuleContext):
         rule_name = rule_names[node.getRuleIndex()]
 
+        # TODO: return type
         if rule_name == "function_":
             fun_name = node.getChild(2).getChild(0).getSymbol().text
 
