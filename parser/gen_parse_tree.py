@@ -188,7 +188,15 @@ def trim_expr(node, rule_names):
     elif rule_name == "pathExpression":
         path = node.getChild(0)
         assert path.getChildCount() == 1, "Assertion: Var name path must be of len 1"
-        return path.getChild(0).getChild(0).getChild(0).getChild(0).getSymbol().text
+        return {
+            "tag": "nam",
+            "val": path.getChild(0)
+            .getChild(0)
+            .getChild(0)
+            .getChild(0)
+            .getSymbol()
+            .text,
+        }
 
     elif rule_name == "literalExpression":
         return {"tag": "lit", "val": node.getChild(0).getSymbol().text}
