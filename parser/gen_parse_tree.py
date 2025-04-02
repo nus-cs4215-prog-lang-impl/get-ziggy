@@ -100,7 +100,7 @@ def expr_infix_operator(node):
     elif op.getChildCount() == 0:
         infix = op.getSymbol().text
     else:
-        assert True, "Assertion: op needs to be 0,1 or 3 layers deep"
+        raise AttributeError("Assertion: op needs to be 0,1 or 3 layers deep")
 
     op_type = ""
 
@@ -196,10 +196,8 @@ def trim_expr(node, rule_names):
 
     elif rule_name == "expressionWithBlock":
         # WARN: Circular recursion, BE CAREFUL!
-        return {
-            "tag": "blk",
-            "body": trim_tree(node.getChild(0).getChild(1), rule_names),
-        }
+        return trim_tree(node.getChild(0), rule_names)
+
     else:
         raise NotImplementedError("Assertion: Expression type not implemented")
 
@@ -250,8 +248,10 @@ def trim_tree(node, rule_names):
         elif rule_name == "statement":
             assert node.getChildCount() == 1, "Assertion: Statement has 1 child"
             return trim_tree(node.getChild(0), rule_names)
+
         elif rule_name == "expressionStatement" or rule_name == "expression":
             return trim_expr(node.getChild(0), rule_names)
+
         elif rule_name == "letStatement":
             assert node.getChildCount() == 5, "Assertion: Let statement has 5 children"
             lhs_node = node.getChild(1).getChild(0).getChild(0)
