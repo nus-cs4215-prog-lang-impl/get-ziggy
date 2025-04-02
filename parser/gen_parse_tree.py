@@ -124,7 +124,6 @@ def expr_infix_operator(node):
 
 # TODO: for trimmming expr
 # 1. prefix expr
-# 4. if expressions
 def trim_expr(node, rule_names):
     rule_name = rule_names[node.getRuleIndex()]
 
@@ -266,6 +265,13 @@ def trim_tree(node, rule_names):
                     if node.getChildCount() == 5
                     else None
                 ),
+            }
+        elif rule_name == "loopExpression":
+            loop = node.getChild(0)
+            return {
+                "tag": "while",
+                "pred": trim_expr(loop.getChild(1), rule_names),
+                "body": trim_tree(loop.getChild(2), rule_names),
             }
 
         elif rule_name == "letStatement":
