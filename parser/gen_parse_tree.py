@@ -70,6 +70,7 @@ def get_call_params(all_args, rule_names):
 
 
 def expr_pre_post_operator(node):
+    assert node.getChildCount() == 2, "Assertion: pre/post fix OP must have 2 children"
     # Prefix
     borrow = ["&", "&&"]
     borrow_attr = ["", "mut", "raw const", "raw mut"]
@@ -80,7 +81,28 @@ def expr_pre_post_operator(node):
     # Postfix
     question = ["?"]
 
-    return (1, 1, 1)
+    op_type = ""
+    if isinstance(node.getChild(0), TerminalNode):
+        op = node.getChild(0).getSymbol().text
+        expr = node.getChild(1)
+
+        if op in borrow:
+            op_type = "borrow"
+        elif op in deref:
+            op_type = "deref"
+        elif op in neg:
+            op_type = "neg"
+    else:
+        op = node.getChild(1).getSymbol().text
+        expr = node.getChild(0)
+
+        if op in question:
+            op_type = "question"
+
+    if op_type == "":
+        raise NotImplementedError("Assertion: Type of unary operator not implemented")
+
+    return op, op_type, expr
 
 
 def expr_infix_operator(node):
