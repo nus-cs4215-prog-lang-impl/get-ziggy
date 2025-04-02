@@ -84,7 +84,6 @@ def expr_pre_post_operator(node):
 
 
 def expr_infix_operator(node):
-
     # Infix
     comp = ["==", "!=", ">", "<", ">=", "<="]
     arith = ["+", "-", "*", "/", "%", "^", "|", "&", "<<", ">>"]
@@ -125,8 +124,6 @@ def expr_infix_operator(node):
 
 # TODO: for trimmming expr
 # 1. prefix expr
-# 2. grouped expressions
-# 3. block expressions
 # 4. if expressions
 def trim_expr(node, rule_names):
     rule_name = rule_names[node.getRuleIndex()]
@@ -166,6 +163,7 @@ def trim_expr(node, rule_names):
             if (
                 isinstance(node.getChild(0), TerminalNode)
                 and node.getChild(0).getSymbol().text == "("
+                and isinstance(node.getChild(2), TerminalNode)
                 and node.getChild(2).getSymbol().text == ")"
             ):
                 return trim_expr(node.getChild(1), rule_names)
@@ -197,12 +195,13 @@ def trim_expr(node, rule_names):
         return {"tag": "lit", "val": node.getChild(0).getSymbol().text}
 
     elif rule_name == "expressionWithBlock":
-        raise NotImplementedError("implement a return hatch")
         # WARN: Circular recursion, BE CAREFUL!
-        # return trim_tree(node.getChild(0), rule_names)
-
+        return {
+            "tag": "blk",
+            "body": trim_tree(node.getChild(0).getChild(1), rule_names),
+        }
     else:
-        raise NotImplementedError("Expression type not implemented")
+        raise NotImplementedError("Assertion: Expression type not implemented")
 
 
 # TODO: deal with identifiers properly
@@ -244,10 +243,13 @@ def trim_tree(node, rule_names):
             return {
                 "tag": "seq",
                 "stmts": [
-                    trim_tree(node.getChild(i).getChild(0), rule_names)
+                    trim_tree(node.getChild(i), rule_names)
                     for i in range(node.getChildCount())
                 ],
             }
+        elif rule_name == "statement":
+            assert node.getChildCount() == 1, "Assertion: Statement has 1 child"
+            return trim_tree(node.getChild(0), rule_names)
         elif rule_name == "expressionStatement" or rule_name == "expression":
             return trim_expr(node.getChild(0), rule_names)
         elif rule_name == "letStatement":
