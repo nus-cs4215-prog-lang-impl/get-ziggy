@@ -205,8 +205,35 @@ def trim_expr(node, rule_names):
         # WARN: Circular recursion, BE CAREFUL!
         return trim_tree(node.getChild(0), rule_names)
 
+    elif rule_name == "expressionStatement":
+        return trim_expr(node.getChild(0), rule_names)
+
+    elif rule_name == "ifExpression":
+        assert (
+            node.getChildCount() == 3 or node.getChildCount() == 5
+        ), "Assertion: :ifExpression can have only 3 of 5 children"
+
+        return {
+            "tag": "cond",
+            "pred": trim_expr(node.getChild(1), rule_names),
+            "cons": trim_tree(node.getChild(2), rule_names),
+            "alt": (
+                trim_tree(node.getChild(4), rule_names)
+                if node.getChildCount() == 5
+                else None
+            ),
+        }
+    elif rule_name == "loopExpression":
+        loop = node.getChild(0)
+        return {
+            "tag": "while",
+            "pred": trim_expr(loop.getChild(1), rule_names),
+            "body": trim_tree(loop.getChild(2), rule_names),
+        }
     else:
-        raise NotImplementedError("Assertion: Expression type not implemented")
+        raise NotImplementedError(
+            f"Assertion: Expression type:::{rule_name}:::not implemented"
+        )
 
 
 # TODO: deal with identifiers properly
@@ -256,31 +283,13 @@ def trim_tree(node, rule_names):
             assert node.getChildCount() == 1, "Assertion: Statement has 1 child"
             return trim_tree(node.getChild(0), rule_names)
 
-        elif rule_name == "expressionStatement" or rule_name == "expression":
-            return trim_expr(node.getChild(0), rule_names)
-
-        elif rule_name == "ifExpression":
-            assert (
-                node.getChildCount() == 3 or node.getChildCount() == 5
-            ), "Assertion: :ifExpression can have only 3 of 5 children"
-
-            return {
-                "tag": "cond",
-                "pred": trim_expr(node.getChild(1), rule_names),
-                "cons": trim_tree(node.getChild(2), rule_names),
-                "alt": (
-                    trim_tree(node.getChild(4), rule_names)
-                    if node.getChildCount() == 5
-                    else None
-                ),
-            }
-        elif rule_name == "loopExpression":
-            loop = node.getChild(0)
-            return {
-                "tag": "while",
-                "pred": trim_expr(loop.getChild(1), rule_names),
-                "body": trim_tree(loop.getChild(2), rule_names),
-            }
+        elif rule_name in [
+            "expressionStatement",
+            "expression",
+            "loopExpression",
+            "ifExpression",
+        ]:
+            return trim_expr(node, rule_names)
 
         elif rule_name == "letStatement":
             assert node.getChildCount() == 5, "Assertion: Let statement has 5 children"
