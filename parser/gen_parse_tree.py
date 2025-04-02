@@ -252,6 +252,22 @@ def trim_tree(node, rule_names):
         elif rule_name == "expressionStatement" or rule_name == "expression":
             return trim_expr(node.getChild(0), rule_names)
 
+        elif rule_name == "ifExpression":
+            assert (
+                node.getChildCount() == 3 or node.getChildCount() == 5
+            ), "Assertion: :ifExpression can have only 3 of 5 children"
+
+            return {
+                "tag": "cond",
+                "pred": trim_expr(node.getChild(1), rule_names),
+                "cons": trim_tree(node.getChild(2), rule_names),
+                "alt": (
+                    trim_tree(node.getChild(4), rule_names)
+                    if node.getChildCount() == 5
+                    else None
+                ),
+            }
+
         elif rule_name == "letStatement":
             assert node.getChildCount() == 5, "Assertion: Let statement has 5 children"
             lhs_node = node.getChild(1).getChild(0).getChild(0)
