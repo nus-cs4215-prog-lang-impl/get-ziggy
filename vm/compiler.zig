@@ -43,6 +43,12 @@ const Param = struct {
     // TODO: type_info?
 };
 
+// Explicit Error Set
+const CompileErrors = error{
+    UnimplementedAstNode,
+    OutOfMemory,
+};
+
 // AstNode Declaration
 const AstNode = struct {
     data: AstData,
@@ -65,6 +71,7 @@ const AstNode = struct {
     };
 };
 
+// Instruction Declaration
 const Instruction = struct {
     data: InstructionData,
     const InstructionData = union(enum) {
@@ -123,7 +130,16 @@ const Compiler = struct {
         }
     }
 
-    pub fn compile(self: *Compiler, node: *const AstNode) !void {
+    // Helper to compile binary operations
+    fn compileBinaryOp(self: *Compiler, left: *const AstNode, right: *const AstNode, op: BinaryOperator) CompileErrors!void {
+        try self.compile(left);
+        try self.compile(right);
+        _ = try self.addInstr(.{ .Binop = op });
+    }
+
+    // NOTE: CompileErrors!void is a hack to get around "unable to resolve inferred error set":
+    // https://github.com/ziglang/zig/issues/763
+    pub fn compile(self: *Compiler, node: *const AstNode) CompileErrors!void {
         switch (node.data) {
             .Literal => |val| {
                 _ = try self.addInstr(.{ .Ldc = val });
@@ -132,9 +148,7 @@ const Compiler = struct {
                 _ = try self.addInstr(.{ .Ld = name });
             },
             .BinaryOp => |op_data| {
-                try self.compile(op_data.left);
-                try self.compile(op_data.right);
-                _ = try self.addInstr(.{ .Binop = op_data.op });
+                try self.compileBinaryOp(op_data.left, op_data.right, op_data.op);
             },
             .UnaryOp => |op_data| {
                 try self.compile(op_data.operand);
@@ -333,12 +347,12 @@ const Compiler = struct {
             //     //_ = try self.addInstr(.{ .Ldc = .{ .Undefined = .{} } });
             // },
 
-            // else => {
-            //     // Get the tag name for better error reporting
-            //     const tag_name = @tagName(node.data);
-            //     std.debug.print("Compilation error: Unimplemented AST node type: {s}\n", .{tag_name});
-            //     return error.UnimplementedAstNode;
-            // },
+            else => {
+                // Get the tag name for better error reporting
+                const tag_name = @tagName(node.data);
+                std.debug.print("Compilation error: Unimplemented AST node type: {s}\n", .{tag_name});
+                return CompileErrors.UnimplementedAstNode;
+            },
         }
     }
 
@@ -386,6 +400,7 @@ pub fn main() !void {
 
     std.debug.print("Generated Instructions:\n", .{});
     for (compiler.instructions.items, 0..) |instr, i| {
+        // TODO: For Assign and Load, print strings instead of uint
         std.debug.print("{d}: {any}\n", .{ i, instr.data });
     }
 }
