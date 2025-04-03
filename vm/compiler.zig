@@ -109,11 +109,9 @@ const Compiler = struct {
         self.instructions.deinit();
     }
 
-    // Helper to add an instruction and return its index
-    fn addInstr(self: *Compiler, instruction_data: Instruction.InstructionData) !usize {
-        const index = self.instructions.items.len;
+    fn addInstr(self: *Compiler, instruction_data: Instruction.InstructionData) !void {
+        // const index = self.instructions.items.len;
         try self.instructions.append(.{ .data = instruction_data });
-        return index;
     }
 
     // Helper to get the index of the next instruction to be added
@@ -130,47 +128,45 @@ const Compiler = struct {
         }
     }
 
-    // Helper to compile binary operations
     fn compileBinaryOp(self: *Compiler, left: *const AstNode, right: *const AstNode, op: BinaryOperator) CompileErrors!void {
         try self.compile(left);
         try self.compile(right);
-        _ = try self.addInstr(.{ .Binop = op });
+        try self.addInstr(.{ .Binop = op });
+    }
+
+    fn compileUnaryOp(self: *Compiler, operand: *const AstNode, op: UnaryOperator) CompileErrors!void {
+        try self.compile(operand);
+        try self.addInstr(.{ .Unop = op });
+    }
+
+    fn compileSequence(self: *Compiler, statements: *AstNode) !CompileErrors!void {
+        // WARNING: Should this do nothing?
+        if (statements.len == 0) {
+            return;
+        }
+
+        var i: usize = 0;
+        while (i < statements.len) : (i += 1) {
+            try self.compile(statements[i]);
+            // TODO: Check rust spec for behaviour for this
+            // Pop result unless it's the last statement
+            if (i < statements.len - 1) {
+                // WARNING: How do we guarantee the statement has not already been popped?
+                try self.addInstr(.Pop);
+            }
+        }
     }
 
     // NOTE: CompileErrors!void is a hack to get around "unable to resolve inferred error set":
     // https://github.com/ziglang/zig/issues/763
+    // TODO: When all cases are implemented, we should not need CompileErrors anymore?
     pub fn compile(self: *Compiler, node: *const AstNode) CompileErrors!void {
         switch (node.data) {
-            .Literal => |val| {
-                _ = try self.addInstr(.{ .Ldc = val });
-            },
-            .Name => |name| {
-                _ = try self.addInstr(.{ .Ld = name });
-            },
-            .BinaryOp => |op_data| {
-                try self.compileBinaryOp(op_data.left, op_data.right, op_data.op);
-            },
-            .UnaryOp => |op_data| {
-                try self.compile(op_data.operand);
-                _ = try self.addInstr(.{ .Unop = op_data.op });
-            },
-            .Sequence => |seq_data| {
-                if (seq_data.statements.len == 0) {
-                    // TODO: this needs to throw an error?
-                    // Empty sequence evaluates to Undefined? Or is disallowed?
-                    // Let's push Undefined for now.
-                    // _ = try self.addInstr(.{ .Ldc = .{ .Undefined = .{} } });
-                } else {
-                    var i: usize = 0;
-                    while (i < seq_data.statements.len) : (i += 1) {
-                        try self.compile(seq_data.statements[i]);
-                        // Pop result unless it's the last statement
-                        if (i < seq_data.statements.len - 1) {
-                            _ = try self.addInstr(.Pop);
-                        }
-                    }
-                }
-            },
+            .Literal => |val| try self.addInstr(.{ .Ldc = val }),
+            .Name => |name| try self.addInstr(.{ .Ld = name }),
+            .BinaryOp => |op_data| try self.compileBinaryOp(op_data.left, op_data.right, op_data.op),
+            .UnaryOp => |op_data| try self.compileUnaryOp(op_data.operand, op_data.op),
+            .Sequence => |seq_data| try self.compileSequence(seq_data.statements),
             .Block => |block_data| {
                 // TODO: Need a pass to collect local variable names for the scope
                 const empty_locals = &.{};
