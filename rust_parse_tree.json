@@ -1,0 +1,731 @@
+{
+  "rule": "crate",
+  "rust_type": "CrateContext",
+  "children": [
+    {
+      "rule": "item",
+      "rust_type": "ItemContext",
+      "children": [
+        {
+          "rule": "visItem",
+          "rust_type": "VisItemContext",
+          "children": [
+            {
+              "rule": "function_",
+              "rust_type": "Function_Context",
+              "children": [
+                {
+                  "rule": "functionQualifiers",
+                  "rust_type": "FunctionQualifiersContext",
+                  "children": []
+                },
+                {
+                  "text": "fn",
+                  "token_type": "KW_FN"
+                },
+                {
+                  "rule": "identifier",
+                  "rust_type": "IdentifierContext",
+                  "children": [
+                    {
+                      "text": "main",
+                      "token_type": "NON_KEYWORD_IDENTIFIER"
+                    }
+                  ]
+                },
+                {
+                  "text": "(",
+                  "token_type": "LPAREN"
+                },
+                {
+                  "text": ")",
+                  "token_type": "RPAREN"
+                },
+                {
+                  "rule": "blockExpression",
+                  "rust_type": "BlockExpressionContext",
+                  "children": [
+                    null,
+                    {
+                      "rule": "statements",
+                      "rust_type": "StatementsContext",
+                      "children": [
+                        {
+                          "rule": "statement",
+                          "rust_type": "StatementContext",
+                          "children": [
+                            {
+                              "rule": "expressionStatement",
+                              "rust_type": "ExpressionStatementContext",
+                              "children": [
+                                {
+                                  "rule": "expression",
+                                  "rust_type": "ArithmeticOrLogicalExpressionContext",
+                                  "children": [
+                                    {
+                                      "rule": "expression",
+                                      "rust_type": "LiteralExpression_Context",
+                                      "children": [
+                                        {
+                                          "rule": "literalExpression",
+                                          "rust_type": "LiteralExpressionContext",
+                                          "children": [
+                                            {
+                                              "text": "1",
+                                              "token_type": "INTEGER_LITERAL"
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "text": "+",
+                                      "token_type": "PLUS"
+                                    },
+                                    {
+                                      "rule": "expression",
+                                      "rust_type": "LiteralExpression_Context",
+                                      "children": [
+                                        {
+                                          "rule": "literalExpression",
+                                          "rust_type": "LiteralExpressionContext",
+                                          "children": [
+                                            {
+                                              "text": "1",
+                                              "token_type": "INTEGER_LITERAL"
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "rule": "statement",
+                          "rust_type": "StatementContext",
+                          "children": [
+                            {
+                              "rule": "expressionStatement",
+                              "rust_type": "ExpressionStatementContext",
+                              "children": [
+                                {
+                                  "rule": "expression",
+                                  "rust_type": "LiteralExpression_Context",
+                                  "children": [
+                                    {
+                                      "rule": "literalExpression",
+                                      "rust_type": "LiteralExpressionContext",
+                                      "children": [
+                                        {
+                                          "text": "\"two\"",
+                                          "token_type": "STRING_LITERAL"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "rule": "statement",
+                          "rust_type": "StatementContext",
+                          "children": [
+                            {
+                              "rule": "expressionStatement",
+                              "rust_type": "ExpressionStatementContext",
+                              "children": [
+                                {
+                                  "rule": "expression",
+                                  "rust_type": "LiteralExpression_Context",
+                                  "children": [
+                                    {
+                                      "rule": "literalExpression",
+                                      "rust_type": "LiteralExpressionContext",
+                                      "children": [
+                                        {
+                                          "text": "true",
+                                          "token_type": "KW_TRUE"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "rule": "statement",
+                          "rust_type": "StatementContext",
+                          "children": [
+                            {
+                              "rule": "expressionStatement",
+                              "rust_type": "ExpressionStatementContext",
+                              "children": [
+                                {
+                                  "rule": "expression",
+                                  "rust_type": "LiteralExpression_Context",
+                                  "children": [
+                                    {
+                                      "rule": "literalExpression",
+                                      "rust_type": "LiteralExpressionContext",
+                                      "children": [
+                                        {
+                                          "text": "false",
+                                          "token_type": "KW_FALSE"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "rule": "statement",
+                          "rust_type": "StatementContext",
+                          "children": [
+                            {
+                              "rule": "expressionStatement",
+                              "rust_type": "ExpressionStatementContext",
+                              "children": [
+                                {
+                                  "rule": "expression",
+                                  "rust_type": "LiteralExpression_Context",
+                                  "children": [
+                                    {
+                                      "rule": "literalExpression",
+                                      "rust_type": "LiteralExpressionContext",
+                                      "children": [
+                                        {
+                                          "text": "3.14",
+                                          "token_type": "FLOAT_LITERAL"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "rule": "statement",
+                          "rust_type": "StatementContext",
+                          "children": [
+                            {
+                              "rule": "expressionStatement",
+                              "rust_type": "ExpressionStatementContext",
+                              "children": [
+                                {
+                                  "rule": "expression",
+                                  "rust_type": "LiteralExpression_Context",
+                                  "children": [
+                                    {
+                                      "rule": "literalExpression",
+                                      "rust_type": "LiteralExpressionContext",
+                                      "children": [
+                                        {
+                                          "text": "'c'",
+                                          "token_type": "CHAR_LITERAL"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "rule": "statement",
+                          "rust_type": "StatementContext",
+                          "children": [
+                            {
+                              "rule": "expressionStatement",
+                              "rust_type": "ExpressionStatementContext",
+                              "children": [
+                                {
+                                  "rule": "expression",
+                                  "rust_type": "ComparisonExpressionContext",
+                                  "children": [
+                                    {
+                                      "rule": "expression",
+                                      "rust_type": "ArithmeticOrLogicalExpressionContext",
+                                      "children": [
+                                        {
+                                          "rule": "expression",
+                                          "rust_type": "LiteralExpression_Context",
+                                          "children": [
+                                            {
+                                              "rule": "literalExpression",
+                                              "rust_type": "LiteralExpressionContext",
+                                              "children": [
+                                                {
+                                                  "text": "1",
+                                                  "token_type": "INTEGER_LITERAL"
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "text": "+",
+                                          "token_type": "PLUS"
+                                        },
+                                        {
+                                          "rule": "expression",
+                                          "rust_type": "LiteralExpression_Context",
+                                          "children": [
+                                            {
+                                              "rule": "literalExpression",
+                                              "rust_type": "LiteralExpressionContext",
+                                              "children": [
+                                                {
+                                                  "text": "1",
+                                                  "token_type": "INTEGER_LITERAL"
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "rule": "comparisonOperator",
+                                      "rust_type": "ComparisonOperatorContext",
+                                      "children": [
+                                        {
+                                          "text": "==",
+                                          "token_type": "EQEQ"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "rule": "expression",
+                                      "rust_type": "LiteralExpression_Context",
+                                      "children": [
+                                        {
+                                          "rule": "literalExpression",
+                                          "rust_type": "LiteralExpressionContext",
+                                          "children": [
+                                            {
+                                              "text": "2",
+                                              "token_type": "INTEGER_LITERAL"
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "rule": "statement",
+                          "rust_type": "StatementContext",
+                          "children": [
+                            {
+                              "rule": "letStatement",
+                              "rust_type": "LetStatementContext",
+                              "children": [
+                                {
+                                  "text": "let",
+                                  "token_type": "KW_LET"
+                                },
+                                {
+                                  "rule": "patternNoTopAlt",
+                                  "rust_type": "PatternNoTopAltContext",
+                                  "children": [
+                                    {
+                                      "rule": "patternWithoutRange",
+                                      "rust_type": "PatternWithoutRangeContext",
+                                      "children": [
+                                        {
+                                          "rule": "identifierPattern",
+                                          "rust_type": "IdentifierPatternContext",
+                                          "children": [
+                                            {
+                                              "rule": "identifier",
+                                              "rust_type": "IdentifierContext",
+                                              "children": [
+                                                {
+                                                  "text": "x",
+                                                  "token_type": "NON_KEYWORD_IDENTIFIER"
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                {
+                                  "text": "=",
+                                  "token_type": "EQ"
+                                },
+                                {
+                                  "rule": "expression",
+                                  "rust_type": "LiteralExpression_Context",
+                                  "children": [
+                                    {
+                                      "rule": "literalExpression",
+                                      "rust_type": "LiteralExpressionContext",
+                                      "children": [
+                                        {
+                                          "text": "5",
+                                          "token_type": "INTEGER_LITERAL"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "rule": "statement",
+                          "rust_type": "StatementContext",
+                          "children": [
+                            {
+                              "rule": "expressionStatement",
+                              "rust_type": "ExpressionStatementContext",
+                              "children": [
+                                {
+                                  "rule": "expression",
+                                  "rust_type": "PathExpression_Context",
+                                  "children": [
+                                    {
+                                      "rule": "pathExpression",
+                                      "rust_type": "PathExpressionContext",
+                                      "children": [
+                                        {
+                                          "rule": "pathInExpression",
+                                          "rust_type": "PathInExpressionContext",
+                                          "children": [
+                                            {
+                                              "rule": "pathExprSegment",
+                                              "rust_type": "PathExprSegmentContext",
+                                              "children": [
+                                                {
+                                                  "rule": "pathIdentSegment",
+                                                  "rust_type": "PathIdentSegmentContext",
+                                                  "children": [
+                                                    {
+                                                      "rule": "identifier",
+                                                      "rust_type": "IdentifierContext",
+                                                      "children": [
+                                                        {
+                                                          "text": "x",
+                                                          "token_type": "NON_KEYWORD_IDENTIFIER"
+                                                        }
+                                                      ]
+                                                    }
+                                                  ]
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "rule": "statement",
+                          "rust_type": "StatementContext",
+                          "children": [
+                            {
+                              "rule": "letStatement",
+                              "rust_type": "LetStatementContext",
+                              "children": [
+                                {
+                                  "text": "let",
+                                  "token_type": "KW_LET"
+                                },
+                                {
+                                  "rule": "patternNoTopAlt",
+                                  "rust_type": "PatternNoTopAltContext",
+                                  "children": [
+                                    {
+                                      "rule": "patternWithoutRange",
+                                      "rust_type": "PatternWithoutRangeContext",
+                                      "children": [
+                                        {
+                                          "rule": "identifierPattern",
+                                          "rust_type": "IdentifierPatternContext",
+                                          "children": [
+                                            {
+                                              "text": "mut",
+                                              "token_type": "KW_MUT"
+                                            },
+                                            {
+                                              "rule": "identifier",
+                                              "rust_type": "IdentifierContext",
+                                              "children": [
+                                                {
+                                                  "text": "y",
+                                                  "token_type": "NON_KEYWORD_IDENTIFIER"
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                {
+                                  "text": "=",
+                                  "token_type": "EQ"
+                                },
+                                {
+                                  "rule": "expression",
+                                  "rust_type": "LiteralExpression_Context",
+                                  "children": [
+                                    {
+                                      "rule": "literalExpression",
+                                      "rust_type": "LiteralExpressionContext",
+                                      "children": [
+                                        {
+                                          "text": "10",
+                                          "token_type": "INTEGER_LITERAL"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "rule": "statement",
+                          "rust_type": "StatementContext",
+                          "children": [
+                            {
+                              "rule": "expressionStatement",
+                              "rust_type": "ExpressionStatementContext",
+                              "children": [
+                                {
+                                  "rule": "expression",
+                                  "rust_type": "CompoundAssignmentExpressionContext",
+                                  "children": [
+                                    {
+                                      "rule": "expression",
+                                      "rust_type": "PathExpression_Context",
+                                      "children": [
+                                        {
+                                          "rule": "pathExpression",
+                                          "rust_type": "PathExpressionContext",
+                                          "children": [
+                                            {
+                                              "rule": "pathInExpression",
+                                              "rust_type": "PathInExpressionContext",
+                                              "children": [
+                                                {
+                                                  "rule": "pathExprSegment",
+                                                  "rust_type": "PathExprSegmentContext",
+                                                  "children": [
+                                                    {
+                                                      "rule": "pathIdentSegment",
+                                                      "rust_type": "PathIdentSegmentContext",
+                                                      "children": [
+                                                        {
+                                                          "rule": "identifier",
+                                                          "rust_type": "IdentifierContext",
+                                                          "children": [
+                                                            {
+                                                              "text": "y",
+                                                              "token_type": "NON_KEYWORD_IDENTIFIER"
+                                                            }
+                                                          ]
+                                                        }
+                                                      ]
+                                                    }
+                                                  ]
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "rule": "compoundAssignOperator",
+                                      "rust_type": "CompoundAssignOperatorContext",
+                                      "children": [
+                                        {
+                                          "text": "+=",
+                                          "token_type": "PLUSEQ"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "rule": "expression",
+                                      "rust_type": "ArithmeticOrLogicalExpressionContext",
+                                      "children": [
+                                        {
+                                          "rule": "expression",
+                                          "rust_type": "PathExpression_Context",
+                                          "children": [
+                                            {
+                                              "rule": "pathExpression",
+                                              "rust_type": "PathExpressionContext",
+                                              "children": [
+                                                {
+                                                  "rule": "pathInExpression",
+                                                  "rust_type": "PathInExpressionContext",
+                                                  "children": [
+                                                    {
+                                                      "rule": "pathExprSegment",
+                                                      "rust_type": "PathExprSegmentContext",
+                                                      "children": [
+                                                        {
+                                                          "rule": "pathIdentSegment",
+                                                          "rust_type": "PathIdentSegmentContext",
+                                                          "children": [
+                                                            {
+                                                              "rule": "identifier",
+                                                              "rust_type": "IdentifierContext",
+                                                              "children": [
+                                                                {
+                                                                  "text": "x",
+                                                                  "token_type": "NON_KEYWORD_IDENTIFIER"
+                                                                }
+                                                              ]
+                                                            }
+                                                          ]
+                                                        }
+                                                      ]
+                                                    }
+                                                  ]
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "text": "+",
+                                          "token_type": "PLUS"
+                                        },
+                                        {
+                                          "rule": "expression",
+                                          "rust_type": "LiteralExpression_Context",
+                                          "children": [
+                                            {
+                                              "rule": "literalExpression",
+                                              "rust_type": "LiteralExpressionContext",
+                                              "children": [
+                                                {
+                                                  "text": "5",
+                                                  "token_type": "INTEGER_LITERAL"
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "rule": "statement",
+                          "rust_type": "StatementContext",
+                          "children": [
+                            {
+                              "rule": "expressionStatement",
+                              "rust_type": "ExpressionStatementContext",
+                              "children": [
+                                {
+                                  "rule": "expression",
+                                  "rust_type": "PathExpression_Context",
+                                  "children": [
+                                    {
+                                      "rule": "pathExpression",
+                                      "rust_type": "PathExpressionContext",
+                                      "children": [
+                                        {
+                                          "rule": "pathInExpression",
+                                          "rust_type": "PathInExpressionContext",
+                                          "children": [
+                                            {
+                                              "rule": "pathExprSegment",
+                                              "rust_type": "PathExprSegmentContext",
+                                              "children": [
+                                                {
+                                                  "rule": "pathIdentSegment",
+                                                  "rust_type": "PathIdentSegmentContext",
+                                                  "children": [
+                                                    {
+                                                      "rule": "identifier",
+                                                      "rust_type": "IdentifierContext",
+                                                      "children": [
+                                                        {
+                                                          "text": "y",
+                                                          "token_type": "NON_KEYWORD_IDENTIFIER"
+                                                        }
+                                                      ]
+                                                    }
+                                                  ]
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                null
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    null
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "text": "<EOF>",
+      "token_type": "RPAREN"
+    }
+  ]
+}

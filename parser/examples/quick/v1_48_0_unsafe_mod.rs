@@ -1,4 +1,0 @@
-unsafe mod m
-{
-    
-}
