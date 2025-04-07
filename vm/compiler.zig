@@ -119,14 +119,52 @@ const Compiler = struct {
         return self.instructions.items.len;
     }
 
-    // Helper to patch a jump instruction later
-    fn patchJump(self: *Compiler, instr_index: usize, target_addr: usize) void {
-        switch (self.instructions.items[instr_index].data) {
-            .Jof => |*addr| addr.* = target_addr,
-            .Goto => |*addr| addr.* = target_addr,
-            else => @panic("Attempting to patch non-jump instruction"),
+    fn scanNodeRecursive(self: *Compiler, node: *const AstNode, locals: *std.ArrayList([]const u8)) !void {
+        switch (node.data) {
+            .Literal, .Name, .Conditional => {},
+            .App => |app_data| {
+                try self.scanNodeRecursive(app_data.func, locals);
+                for (app_data.args) |arg| try self.scanNodeRecursive(arg, locals);
+            },
+            .LogicalOp => |log_data| {
+                try self.scanNodeRecursive(log_data.left, locals);
+                try self.scanNodeRecursive(log_data.right, locals);
+            },
+            .BinaryOp => |bin_data| {
+                try self.scanNodeRecursive(bin_data.left, locals);
+                try self.scanNodeRecursive(bin_data.right, locals);
+            },
+            .UnaryOp => |un_data| try self.scanNodeRecursive(un_data.operand, locals),
+            .Lambda => {}, // Don't recurse into nested functions/lambdas for *this* scope's locals
+            .Sequence => |seq_data| {
+                for (seq_data.statements) |stmt| try self.scanNodeRecursive(stmt, locals);
+            },
+            .Block => |block_data| try self.scanNodeRecursive(block_data.body, locals),
+            .VarDecl => |decl_data| try locals.append(decl_data.name),
+            .Assignment => |assign_data| try self.scanNodeRecursive(assign_data.value, locals),
+            .FnDecl => |fn_data| try locals.append(fn_data.name), // Function name is local
+            .Return => |ret_data| if (ret_data.value) |v| try self.scanNodeRecursive(v, locals),
+            .WhileLoop => |loop_data| try self.scanNodeRecursive(loop_data.body, locals),
         }
     }
+
+    fn scanForLocals(self: *Compiler, node: *const AstNode) ![][]const u8 {
+        var locals = std.ArrayList([]const u8).init(self.alloc);
+        errdefer locals.deinit();
+
+        try self.scanNodeRecursive(node, &locals);
+
+        return locals.toOwnedSlice();
+    }
+
+    // Helper to patch a jump instruction later
+    // fn patchJump(self: *Compiler, instr_index: usize, target_addr: usize) void {
+    //     switch (self.instructions.items[instr_index].data) {
+    //         .Jof => |*addr| addr.* = target_addr,
+    //         .Goto => |*addr| addr.* = target_addr,
+    //         else => @panic("Attempting to patch non-jump instruction"),
+    //     }
+    // }
 
     fn compileBinaryOp(self: *Compiler, left: *const AstNode, right: *const AstNode, op: BinaryOperator) CompileErrors!void {
         try self.compile(left);
@@ -139,7 +177,7 @@ const Compiler = struct {
         try self.addInstr(.{ .Unop = op });
     }
 
-    fn compileSequence(self: *Compiler, statements: *AstNode) !CompileErrors!void {
+    fn compileSequence(self: *Compiler, statements: []*AstNode) CompileErrors!void {
         // WARNING: Should this do nothing?
         if (statements.len == 0) {
             return;
@@ -148,13 +186,32 @@ const Compiler = struct {
         var i: usize = 0;
         while (i < statements.len) : (i += 1) {
             try self.compile(statements[i]);
-            // TODO: Check rust spec for behaviour for this
-            // Pop result unless it's the last statement
+            // NOTE: Pop result unless it's the last statement. For this to work, only this
+            // compileSequence function should be responsible for popping the statements value
             if (i < statements.len - 1) {
-                // WARNING: How do we guarantee the statement has not already been popped?
                 try self.addInstr(.Pop);
             }
         }
+    }
+
+    fn compileBlock(self: *Compiler, body: *const AstNode) CompileErrors!void {
+        const locals = try self.scanForLocals(body);
+        try self.addInstr(.{ .EnterScope = .{ .locals = locals } });
+        try self.compile(body);
+        try self.addInstr(.ExitScope);
+    }
+
+    // NOTE: Variable Declaration should NOT leave a value on the stack, it is considered a statement
+    // and returns nothing. This pop behaviour should be managed by compileSequence, not here.
+    fn compileVarDecl(self: *Compiler, name: []const u8, value: *const AstNode) CompileErrors!void {
+        try self.compile(value);
+        try self.addInstr(.{ .Assign = name });
+    }
+
+    // NOTE: See compileVarDecl on popping the value
+    fn compileAssignment(self: *Compiler, name: []const u8, value: *const AstNode) CompileErrors!void {
+        try self.compile(value);
+        try self.addInstr(.{ .Assign = name });
     }
 
     // NOTE: CompileErrors!void is a hack to get around "unable to resolve inferred error set":
@@ -167,26 +224,9 @@ const Compiler = struct {
             .BinaryOp => |op_data| try self.compileBinaryOp(op_data.left, op_data.right, op_data.op),
             .UnaryOp => |op_data| try self.compileUnaryOp(op_data.operand, op_data.op),
             .Sequence => |seq_data| try self.compileSequence(seq_data.statements),
-            .Block => |block_data| {
-                // TODO: Need a pass to collect local variable names for the scope
-                const empty_locals = &.{};
-                _ = try self.addInstr(.{ .EnterScope = .{ .locals = empty_locals } });
-                try self.compile(block_data.body);
-                _ = try self.addInstr(.ExitScope);
-            },
-            .VarDecl => |decl_data| {
-                try self.compile(decl_data.value);
-                _ = try self.addInstr(.{ .Assign = decl_data.name });
-                // TODO: Assign instruction should leave the assigned value on the stack
-                // according to some language semantics, or pop it.
-                // If VarDecl itself shouldn't leave a value, add Pop here.
-                // For now, assume Assign leaves value.
-            },
-            .Assignment => |assign_data| {
-                try self.compile(assign_data.value);
-                _ = try self.addInstr(.{ .Assign = assign_data.name });
-                // TODO: Similar to VarDecl, assume Assign leaves the value on stack.
-            },
+            .Block => |block_data| try self.compileBlock(block_data.body),
+            .VarDecl => |decl_data| try self.compileVarDecl(decl_data.name, decl_data.value),
+            .Assignment => |assign_data| try self.compileAssignment(assign_data.name, assign_data.value),
 
             // --- More Complex Cases (GPT Placeholders) ---
 
@@ -343,6 +383,7 @@ const Compiler = struct {
             //     //_ = try self.addInstr(.{ .Ldc = .{ .Undefined = .{} } });
             // },
 
+            // TODO: Remove this
             else => {
                 // Get the tag name for better error reporting
                 const tag_name = @tagName(node.data);
@@ -396,7 +437,13 @@ pub fn main() !void {
 
     std.debug.print("Generated Instructions:\n", .{});
     for (compiler.instructions.items, 0..) |instr, i| {
-        // TODO: For Assign and Load, print strings instead of uint
-        std.debug.print("{d}: {any}\n", .{ i, instr.data });
+        std.debug.print("{d}: ", .{i});
+        switch (instr.data) {
+            .Ld => |name| std.debug.print("Ld(\"{s}\")\n", .{name}),
+            .Assign => |name| std.debug.print("Assign(\"{s}\")\n", .{name}),
+            // NOTE: Add specific formatting for other instructions if needed
+            // e.g., EnterScope, Ldf
+            else => std.debug.print("{any}\n", .{instr.data}),
+        }
     }
 }
