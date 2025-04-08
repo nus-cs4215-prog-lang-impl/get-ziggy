@@ -20,7 +20,7 @@ def parse_file(filepath):
     try:
         tree = parser.crate()
         print(tree.toStringTree(parser.ruleNames))
-        result = to_json(tree, parser.ruleNames)
+        result = trim_tree(tree, parser.ruleNames)
     except Exception as e:
         output.write("\n" * 2)
         output.write(" *" * 10)
@@ -36,11 +36,241 @@ def parse_file(filepath):
 
 
 def exclude_token(token_text):
-    exclude = ["{", "}", ";"]
+    exclude = [";", "<EOF>", "}"]
     return token_text in exclude
 
 
-def to_json(node, rule_names):
+def is_allowable(rule_name):
+    allow = ["item", "visItem"]
+    return rule_name in allow
+
+
+def get_pattern_id(node, rule_names):
+    if rule_names[node.getRuleIndex()] == "identifier":
+        return node.getChild(0)
+    else:
+        return get_pattern_id(node.getChild(0), rule_names)
+
+
+def get_fn_params(node, rule_names):
+    out = []
+    for i in range(0, node.getChildCount(), 2):
+        param = node.getChild(i)
+        id = get_pattern_id(param.getChild(0), rule_names).getSymbol()
+        out.append({"nam": id.text, "type": param.getChild(2)})
+
+    return out
+
+
+def get_call_params(all_args, rule_names):
+    args = []
+    for a in range(0, all_args.getChildCount(), 2):
+        args.append(trim_expr(all_args.getChild(a), rule_names))
+    return args
+
+
+def expr_pre_post_operator(node):
+    # Prefix
+    borrow = ["&", "&&"]
+    # NOTE: Don't support 'raw mut' or 'const mut' as they are macros
+    borrow_attr = ["mut"]
+
+    deref = ["*"]
+    neg = ["!", "-"]
+
+    # Postfix
+    question = ["?"]
+
+    op_type = ""
+    if isinstance(node.getChild(0), TerminalNode):
+        op = node.getChild(0).getSymbol().text
+        if node.getChildCount() > 2:
+            expr = node.getChild(2)
+
+            attr = node.getChild(1).getSymbol().text
+            if op in borrow and attr in borrow_attr:
+                op_type = "borrow mut"
+
+        else:
+            expr = node.getChild(1)
+
+            if op in borrow:
+                op_type = "borrow"
+            elif op in deref:
+                op_type = "deref"
+            elif op in neg:
+                op_type = "neg"
+    else:
+        op = node.getChild(1).getSymbol().text
+        expr = node.getChild(0)
+
+        if op in question:
+            op_type = "question"
+
+    if op_type == "":
+        raise NotImplementedError("Assertion: Type of unary operator not implemented")
+
+    return op, op_type, expr
+
+
+def expr_infix_operator(node):
+    # Infix
+    comp = ["==", "!=", ">", "<", ">=", "<="]
+    arith = ["+", "-", "*", "/", "%", "^", "|", "&", "<<", ">>"]
+    lazy_bool = ["||", "&&"]
+    type_cast = ["as"]
+    # NOTE: antlr treats 'assignmentExpression' (from Rust grammar) as regular expr
+    assign = ["="]
+    compound_assign = ["+=", "-=", "*=", "/=", "%=", "&=", "|=", "^=", "<<=", ">>="]
+
+    op = node.getChild(1)
+    infix = None
+    if op.getChildCount() == 1:
+        infix = op.getChild(0).getSymbol().text
+    elif op.getChildCount() == 0:
+        infix = op.getSymbol().text
+    else:
+        raise AttributeError("Assertion: op needs to be 0,1 or 3 layers deep")
+
+    op_type = ""
+
+    if infix in arith:
+        op_type = "arith"
+    elif infix in comp:
+        op_type = "comp"
+    elif infix in lazy_bool:
+        op_type = "logic"
+    elif infix in type_cast:
+        op_type = "typecast"
+    elif infix in assign:
+        op_type = "assign"
+    elif infix in compound_assign:
+        op_type = "compound_assign"
+    else:
+        raise NotImplementedError(f"infix op:::{infix}:::not implemented")
+
+    return infix, op_type, node.getChild(0), node.getChild(2)
+
+
+# TODO: for trimmming expr
+def trim_expr(node, rule_names):
+    rule_name = rule_names[node.getRuleIndex()]
+
+    if rule_name == "expression":
+        # NOTE: Heurisitc used for finding call expression as antlr tree
+        # does not yield call expression tag
+        assert (
+            node.getChildCount() >= 1
+        ), "Assertion: 'expression' tag has less than 1 children"
+
+        if isinstance(node.getChild(0), TerminalNode) and node.getChild(
+            0
+        ).getSymbol().text in ["return", "break", "continue"]:
+            return {
+                "tag": node.getChild(0).getSymbol().text,
+                "body": (
+                    None
+                    if node.getChildCount() != 2
+                    else trim_expr(node.getChild(1), rule_names)
+                ),
+            }
+        elif (
+            node.getChildCount() >= 3
+            and node.getChild(0)
+            and isinstance(node.getChild(1), TerminalNode)
+            and node.getChild(1).getSymbol().text == "("
+        ):
+            fn_name = trim_expr(node.getChild(0), rule_names)
+            return {
+                "tag": "app",
+                "nam": fn_name,
+                "args": get_call_params(node.getChild(2), rule_names),
+            }
+        elif node.getChildCount() == 2 or (
+            isinstance(node.getChild(0), TerminalNode)
+            and node.getChild(0).getSymbol().text in ["&", "&&"]
+        ):
+            op, op_type, lhs = expr_pre_post_operator(node)
+            return {
+                "tag": op_type,
+                "sym": op,
+                "first": trim_expr(lhs, rule_names),
+            }
+
+        elif node.getChildCount() == 3:
+            if (
+                isinstance(node.getChild(0), TerminalNode)
+                and node.getChild(0).getSymbol().text == "("
+                and isinstance(node.getChild(2), TerminalNode)
+                and node.getChild(2).getSymbol().text == ")"
+            ):
+                return trim_expr(node.getChild(1), rule_names)
+            else:
+                # NOTE: Check footnote on precendence
+                op, op_type, lhs, rhs = expr_infix_operator(node)
+                return {
+                    "tag": op_type,
+                    "sym": op,
+                    "first": trim_expr(lhs, rule_names),
+                    "second": trim_expr(rhs, rule_names),
+                }
+
+        else:
+            return trim_expr(node.getChild(0), rule_names)
+
+    elif rule_name == "pathExpression":
+        path = node.getChild(0)
+        assert path.getChildCount() == 1, "Assertion: Var name path must be of len 1"
+        return {
+            "tag": "nam",
+            "val": path.getChild(0)
+            .getChild(0)
+            .getChild(0)
+            .getChild(0)
+            .getSymbol()
+            .text,
+        }
+
+    elif rule_name == "literalExpression":
+        return {"tag": "lit", "val": node.getChild(0).getSymbol().text}
+
+    elif rule_name == "expressionWithBlock":
+        # WARN: Circular recursion, BE CAREFUL!
+        return trim_tree(node.getChild(0), rule_names)
+
+    elif rule_name == "expressionStatement":
+        return trim_expr(node.getChild(0), rule_names)
+
+    elif rule_name == "ifExpression":
+        assert (
+            node.getChildCount() == 3 or node.getChildCount() == 5
+        ), "Assertion: :ifExpression can have only 3 of 5 children"
+
+        return {
+            "tag": "cond",
+            "pred": trim_expr(node.getChild(1), rule_names),
+            "cons": trim_tree(node.getChild(2), rule_names),
+            "alt": (
+                trim_tree(node.getChild(4), rule_names)
+                if node.getChildCount() == 5
+                else None
+            ),
+        }
+    elif rule_name == "loopExpression":
+        loop = node.getChild(0)
+        return {
+            "tag": "while",
+            "pred": trim_expr(loop.getChild(1), rule_names),
+            "body": trim_tree(loop.getChild(2), rule_names),
+        }
+    else:
+        raise NotImplementedError(
+            f"Assertion: Expression type:::{rule_name}:::not implemented"
+        )
+
+
+# TODO: deal with identifiers properly
+def trim_tree(node, rule_names):
     """
     Convert parse tree to structured JSON format including:
     - Syntactic structure (rules)
@@ -49,22 +279,92 @@ def to_json(node, rule_names):
     """
     if isinstance(node, TerminalNode) and (not exclude_token(node.getSymbol().text)):
         token = node.getSymbol()
+        raise AttributeError(f"don't want literals:::::{token.text}::::")
         return {
+            "tag": "lit",
             "text": token.text,
             "token_type": RustLexer.symbolicNames[token.type],  # Token name
         }
 
     elif isinstance(node, ParserRuleContext):
-        children = [
-            to_json(node.getChild(i), rule_names) for i in range(node.getChildCount())
-        ]
-        return {
-            "rule": rule_names[node.getRuleIndex()],  # Get rule name
-            "rust_type": node.__class__.__name__,  # Class name (may indicate Rust type)
-            "children": children,
-        }
+        rule_name = rule_names[node.getRuleIndex()]
 
-    return None
+        # TODO: return type
+        if rule_name == "function_":
+            fun_name = node.getChild(2).getChild(0).getSymbol().text
+
+            para_node = node.getChild(4)
+            if isinstance(para_node, TerminalNode):
+                params = []
+                body = trim_tree(node.getChild(5), rule_names)
+            else:
+                params = get_fn_params(para_node, rule_names)
+                body = trim_tree(node.getChild(6), rule_names)
+
+            return {"tag": "fun", "nam": fun_name, "params": params, "body": body}
+        elif rule_name == "blockExpression":
+            return {"tag": "blk", "body": trim_tree(node.getChild(1), rule_names)}
+        elif rule_name == "statements":
+            return {
+                "tag": "seq",
+                "stmts": [
+                    trim_tree(node.getChild(i), rule_names)
+                    for i in range(node.getChildCount())
+                ],
+            }
+        elif rule_name == "statement":
+            assert node.getChildCount() == 1, "Assertion: Statement has 1 child"
+            return trim_tree(node.getChild(0), rule_names)
+
+        elif rule_name in [
+            "expressionStatement",
+            "expression",
+            "loopExpression",
+            "ifExpression",
+        ]:
+            return trim_expr(node, rule_names)
+
+        elif rule_name == "letStatement":
+            assert node.getChildCount() == 5, "Assertion: Let statement has 5 children"
+            lhs_node = node.getChild(1).getChild(0).getChild(0)
+            if isinstance(lhs_node.getChild(0), TerminalNode):
+                is_mut = True
+                nam = lhs_node.getChild(1).getChild(0).getSymbol().text
+            else:
+                is_mut = False
+                nam = lhs_node.getChild(0).getChild(0).getSymbol().text
+
+            rhs_node = trim_tree(node.getChild(3), rule_names)
+            return {
+                "tag": "assign",
+                "is_mut": is_mut,
+                "nam": nam,
+                "val": rhs_node,
+            }
+        elif rule_name == "macroInvocationSemi":
+            raise NotImplementedError("Won't implement or macro statements")
+
+        elif rule_name in ["item", "visItem"]:
+            assert (
+                node.getChildCount() == 1
+            ), "Assertion: :item and :visItem must have ONLY 1 child"
+            return trim_tree(node.getChild(0), rule_names)
+
+        elif rule_name == "crate":
+            return {
+                "tag": "blk",
+                "body": {
+                    "tag": "seq",
+                    "stmts": [
+                        trim_tree(node.getChild(i), rule_names)
+                        for i in range(node.getChildCount())
+                    ],
+                },
+            }
+        else:
+            raise NotImplementedError(f"Rule name {rule_name} not implemented in parse")
+
+    return ""
 
 
 if __name__ == "__main__":
@@ -74,7 +374,27 @@ if __name__ == "__main__":
 
     syntax_tree = parse_file(args.f)
     if syntax_tree:
-        with open("rust_parse_tree.json", "w", encoding="utf-8") as f:
+        # NOTE: if multple files with same name but diff dir are parsed then silent conflict
+        out_filename = (args.f.split("/")[-1]).split(".")[0]
+        with open(f"../out_parse/{out_filename}.json", "w", encoding="utf-8") as f:
+            print(syntax_tree)
             json.dump(syntax_tree, f, indent=2)
     else:
         print(f"ERROR response is not created {syntax_tree}")
+
+
+#
+#
+# NOTE: FOOTNOTE
+# - Operator precendence We don't impl
+# ---- We don't do it, cause the antlr parse tree is left to right recursive
+# (expression
+#     (expression (identifier y)) +
+#         (expression
+#             (expression
+#                 (expression (literalExpression 1))
+#                 *
+#                 (expression (literalExpression 2)))
+#                     / (expression (literalExpression 5))
+#         )
+# )

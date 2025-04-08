@@ -11,3 +11,6 @@ result
 
 # Python
 */__pycache__/
+
+# Project specific
+out_parse/
