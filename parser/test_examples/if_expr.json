@@ -1,0 +1,136 @@
+{
+  "tag": "blk",
+  "body": {
+    "tag": "seq",
+    "stmts": [
+      {
+        "tag": "fun",
+        "nam": "main",
+        "params": [],
+        "body": {
+          "tag": "blk",
+          "body": {
+            "tag": "seq",
+            "stmts": [
+              {
+                "tag": "assign",
+                "is_mut": false,
+                "nam": "n",
+                "val": {
+                  "tag": "lit",
+                  "val": "5"
+                }
+              },
+              {
+                "tag": "cond",
+                "pred": {
+                  "tag": "comp",
+                  "sym": "<",
+                  "first": {
+                    "tag": "nam",
+                    "val": "n"
+                  },
+                  "second": {
+                    "tag": "lit",
+                    "val": "0"
+                  }
+                },
+                "cons": {
+                  "tag": "blk",
+                  "body": {
+                    "tag": "seq",
+                    "stmts": [
+                      {
+                        "tag": "app",
+                        "nam": {
+                          "tag": "nam",
+                          "val": "print"
+                        },
+                        "args": [
+                          {
+                            "tag": "lit",
+                            "val": "\"{} is negative\""
+                          },
+                          {
+                            "tag": "nam",
+                            "val": "n"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                },
+                "alt": {
+                  "tag": "cond",
+                  "pred": {
+                    "tag": "comp",
+                    "sym": ">",
+                    "first": {
+                      "tag": "nam",
+                      "val": "n"
+                    },
+                    "second": {
+                      "tag": "lit",
+                      "val": "0"
+                    }
+                  },
+                  "cons": {
+                    "tag": "blk",
+                    "body": {
+                      "tag": "seq",
+                      "stmts": [
+                        {
+                          "tag": "app",
+                          "nam": {
+                            "tag": "nam",
+                            "val": "print"
+                          },
+                          "args": [
+                            {
+                              "tag": "lit",
+                              "val": "\"{} is positive\""
+                            },
+                            {
+                              "tag": "nam",
+                              "val": "n"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  },
+                  "alt": {
+                    "tag": "blk",
+                    "body": {
+                      "tag": "seq",
+                      "stmts": [
+                        {
+                          "tag": "app",
+                          "nam": {
+                            "tag": "nam",
+                            "val": "print"
+                          },
+                          "args": [
+                            {
+                              "tag": "lit",
+                              "val": "\"{} is zero\""
+                            },
+                            {
+                              "tag": "nam",
+                              "val": "n"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      ""
+    ]
+  }
+}

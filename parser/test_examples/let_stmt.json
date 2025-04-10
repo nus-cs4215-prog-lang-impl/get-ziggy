@@ -1,0 +1,49 @@
+{
+  "tag": "blk",
+  "body": {
+    "tag": "seq",
+    "stmts": [
+      {
+        "tag": "fun",
+        "nam": "main",
+        "params": [],
+        "body": {
+          "tag": "blk",
+          "body": {
+            "tag": "seq",
+            "stmts": [
+              {
+                "tag": "assign",
+                "is_mut": false,
+                "nam": "x",
+                "val": {
+                  "tag": "lit",
+                  "val": "1"
+                }
+              },
+              {
+                "tag": "assign",
+                "is_mut": true,
+                "nam": "y",
+                "val": {
+                  "tag": "lit",
+                  "val": "2"
+                }
+              },
+              {
+                "tag": "assign",
+                "is_mut": false,
+                "nam": "b",
+                "val": {
+                  "tag": "lit",
+                  "val": "3_i32"
+                }
+              }
+            ]
+          }
+        }
+      },
+      ""
+    ]
+  }
+}

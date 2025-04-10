@@ -1,0 +1,66 @@
+{
+  "tag": "blk",
+  "body": {
+    "tag": "seq",
+    "stmts": [
+      {
+        "tag": "fun",
+        "nam": "main",
+        "params": [],
+        "body": {
+          "tag": "blk",
+          "body": {
+            "tag": "seq",
+            "stmts": [
+              {
+                "tag": "assign",
+                "is_mut": true,
+                "nam": "a",
+                "val": {
+                  "tag": "lit",
+                  "val": "0"
+                }
+              },
+              {
+                "tag": "while",
+                "pred": {
+                  "tag": "comp",
+                  "sym": "<",
+                  "first": {
+                    "tag": "nam",
+                    "val": "a"
+                  },
+                  "second": {
+                    "tag": "lit",
+                    "val": "10"
+                  }
+                },
+                "body": {
+                  "tag": "blk",
+                  "body": {
+                    "tag": "seq",
+                    "stmts": [
+                      {
+                        "tag": "compound_assign",
+                        "sym": "+=",
+                        "first": {
+                          "tag": "nam",
+                          "val": "a"
+                        },
+                        "second": {
+                          "tag": "lit",
+                          "val": "1"
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      ""
+    ]
+  }
+}

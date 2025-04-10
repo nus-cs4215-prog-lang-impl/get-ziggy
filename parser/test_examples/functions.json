@@ -1,0 +1,122 @@
+{
+  "tag": "blk",
+  "body": {
+    "tag": "seq",
+    "stmts": [
+      {
+        "tag": "fun",
+        "nam": "one",
+        "params": [],
+        "body": {
+          "tag": "blk",
+          "body": {
+            "tag": "seq",
+            "stmts": [
+              {
+                "tag": "lit",
+                "val": "1"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "tag": "fun",
+        "nam": "foo",
+        "params": [
+          {
+            "nam": "a",
+            "type": null
+          }
+        ],
+        "body": {
+          "tag": "blk",
+          "body": ""
+        }
+      },
+      {
+        "tag": "fun",
+        "nam": "bar",
+        "params": [
+          {
+            "nam": "a",
+            "type": null
+          },
+          {
+            "nam": "b",
+            "type": null
+          }
+        ],
+        "body": {
+          "tag": "blk",
+          "body": ""
+        }
+      },
+      {
+        "tag": "fun",
+        "nam": "main",
+        "params": [],
+        "body": {
+          "tag": "blk",
+          "body": {
+            "tag": "seq",
+            "stmts": [
+              {
+                "tag": "app",
+                "nam": {
+                  "tag": "nam",
+                  "val": "show"
+                },
+                "args": []
+              },
+              {
+                "tag": "app",
+                "nam": {
+                  "tag": "nam",
+                  "val": "foo"
+                },
+                "args": [
+                  {
+                    "tag": "lit",
+                    "val": "1"
+                  }
+                ]
+              },
+              {
+                "tag": "app",
+                "nam": {
+                  "tag": "nam",
+                  "val": "bar"
+                },
+                "args": [
+                  {
+                    "tag": "app",
+                    "nam": {
+                      "tag": "nam",
+                      "val": "one"
+                    },
+                    "args": []
+                  },
+                  {
+                    "tag": "app",
+                    "nam": {
+                      "tag": "nam",
+                      "val": "foo"
+                    },
+                    "args": [
+                      {
+                        "tag": "lit",
+                        "val": "1"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      ""
+    ]
+  }
+}

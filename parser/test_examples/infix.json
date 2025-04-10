@@ -1,0 +1,122 @@
+{
+  "tag": "blk",
+  "body": {
+    "tag": "seq",
+    "stmts": [
+      {
+        "tag": "fun",
+        "nam": "main",
+        "params": [],
+        "body": {
+          "tag": "blk",
+          "body": {
+            "tag": "seq",
+            "stmts": [
+              {
+                "tag": "arith",
+                "sym": "+",
+                "first": {
+                  "tag": "lit",
+                  "val": "1"
+                },
+                "second": {
+                  "tag": "lit",
+                  "val": "2"
+                }
+              },
+              {
+                "tag": "comp",
+                "sym": "==",
+                "first": {
+                  "tag": "lit",
+                  "val": "true"
+                },
+                "second": {
+                  "tag": "lit",
+                  "val": "false"
+                }
+              },
+              {
+                "tag": "comp",
+                "sym": ">",
+                "first": {
+                  "tag": "lit",
+                  "val": "3"
+                },
+                "second": {
+                  "tag": "lit",
+                  "val": "2"
+                }
+              },
+              {
+                "tag": "comp",
+                "sym": "==",
+                "first": {
+                  "tag": "arith",
+                  "sym": "+",
+                  "first": {
+                    "tag": "lit",
+                    "val": "1"
+                  },
+                  "second": {
+                    "tag": "lit",
+                    "val": "2"
+                  }
+                },
+                "second": {
+                  "tag": "arith",
+                  "sym": "*",
+                  "first": {
+                    "tag": "lit",
+                    "val": "3"
+                  },
+                  "second": {
+                    "tag": "lit",
+                    "val": "12"
+                  }
+                }
+              },
+              {
+                "tag": "logic",
+                "sym": "&&",
+                "first": {
+                  "tag": "comp",
+                  "sym": ">",
+                  "first": {
+                    "tag": "lit",
+                    "val": "3"
+                  },
+                  "second": {
+                    "tag": "lit",
+                    "val": "2"
+                  }
+                },
+                "second": {
+                  "tag": "comp",
+                  "sym": "<",
+                  "first": {
+                    "tag": "arith",
+                    "sym": "+",
+                    "first": {
+                      "tag": "lit",
+                      "val": "1"
+                    },
+                    "second": {
+                      "tag": "lit",
+                      "val": "2"
+                    }
+                  },
+                  "second": {
+                    "tag": "lit",
+                    "val": "1"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      ""
+    ]
+  }
+}

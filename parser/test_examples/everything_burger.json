@@ -1,0 +1,689 @@
+{
+  "tag": "blk",
+  "body": {
+    "tag": "seq",
+    "stmts": [
+      {
+        "tag": "fun",
+        "nam": "one",
+        "params": [],
+        "body": {
+          "tag": "blk",
+          "body": {
+            "tag": "seq",
+            "stmts": [
+              {
+                "tag": "lit",
+                "val": "1"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "tag": "fun",
+        "nam": "foo",
+        "params": [
+          {
+            "nam": "a",
+            "type": null
+          }
+        ],
+        "body": {
+          "tag": "blk",
+          "body": ""
+        }
+      },
+      {
+        "tag": "fun",
+        "nam": "bar",
+        "params": [
+          {
+            "nam": "a",
+            "type": null
+          },
+          {
+            "nam": "b",
+            "type": null
+          }
+        ],
+        "body": {
+          "tag": "blk",
+          "body": ""
+        }
+      },
+      {
+        "tag": "fun",
+        "nam": "main",
+        "params": [],
+        "body": {
+          "tag": "blk",
+          "body": {
+            "tag": "seq",
+            "stmts": [
+              {
+                "tag": "app",
+                "nam": {
+                  "tag": "nam",
+                  "val": "show"
+                },
+                "args": []
+              },
+              {
+                "tag": "app",
+                "nam": {
+                  "tag": "nam",
+                  "val": "foo"
+                },
+                "args": [
+                  {
+                    "tag": "lit",
+                    "val": "1"
+                  }
+                ]
+              },
+              {
+                "tag": "app",
+                "nam": {
+                  "tag": "nam",
+                  "val": "bar"
+                },
+                "args": [
+                  {
+                    "tag": "app",
+                    "nam": {
+                      "tag": "nam",
+                      "val": "one"
+                    },
+                    "args": []
+                  },
+                  {
+                    "tag": "app",
+                    "nam": {
+                      "tag": "nam",
+                      "val": "foo"
+                    },
+                    "args": [
+                      {
+                        "tag": "lit",
+                        "val": "1"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "tag": "blk",
+                "body": {
+                  "tag": "seq",
+                  "stmts": [
+                    {
+                      "tag": "lit",
+                      "val": "\"HI\""
+                    }
+                  ]
+                }
+              },
+              {
+                "tag": "assign",
+                "is_mut": false,
+                "nam": "n",
+                "val": {
+                  "tag": "lit",
+                  "val": "5"
+                }
+              },
+              {
+                "tag": "cond",
+                "pred": {
+                  "tag": "comp",
+                  "sym": "<",
+                  "first": {
+                    "tag": "nam",
+                    "val": "n"
+                  },
+                  "second": {
+                    "tag": "lit",
+                    "val": "0"
+                  }
+                },
+                "cons": {
+                  "tag": "blk",
+                  "body": {
+                    "tag": "seq",
+                    "stmts": [
+                      {
+                        "tag": "app",
+                        "nam": {
+                          "tag": "nam",
+                          "val": "print"
+                        },
+                        "args": [
+                          {
+                            "tag": "lit",
+                            "val": "\"{} is negative\""
+                          },
+                          {
+                            "tag": "nam",
+                            "val": "n"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                },
+                "alt": {
+                  "tag": "cond",
+                  "pred": {
+                    "tag": "comp",
+                    "sym": ">",
+                    "first": {
+                      "tag": "nam",
+                      "val": "n"
+                    },
+                    "second": {
+                      "tag": "lit",
+                      "val": "0"
+                    }
+                  },
+                  "cons": {
+                    "tag": "blk",
+                    "body": {
+                      "tag": "seq",
+                      "stmts": [
+                        {
+                          "tag": "app",
+                          "nam": {
+                            "tag": "nam",
+                            "val": "print"
+                          },
+                          "args": [
+                            {
+                              "tag": "lit",
+                              "val": "\"{} is positive\""
+                            },
+                            {
+                              "tag": "nam",
+                              "val": "n"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  },
+                  "alt": {
+                    "tag": "blk",
+                    "body": {
+                      "tag": "seq",
+                      "stmts": [
+                        {
+                          "tag": "app",
+                          "nam": {
+                            "tag": "nam",
+                            "val": "print"
+                          },
+                          "args": [
+                            {
+                              "tag": "lit",
+                              "val": "\"{} is zero\""
+                            },
+                            {
+                              "tag": "nam",
+                              "val": "n"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                }
+              },
+              {
+                "tag": "arith",
+                "sym": "+",
+                "first": {
+                  "tag": "lit",
+                  "val": "1"
+                },
+                "second": {
+                  "tag": "lit",
+                  "val": "2"
+                }
+              },
+              {
+                "tag": "comp",
+                "sym": "==",
+                "first": {
+                  "tag": "lit",
+                  "val": "true"
+                },
+                "second": {
+                  "tag": "lit",
+                  "val": "false"
+                }
+              },
+              {
+                "tag": "comp",
+                "sym": ">",
+                "first": {
+                  "tag": "lit",
+                  "val": "3"
+                },
+                "second": {
+                  "tag": "lit",
+                  "val": "2"
+                }
+              },
+              {
+                "tag": "comp",
+                "sym": "==",
+                "first": {
+                  "tag": "arith",
+                  "sym": "+",
+                  "first": {
+                    "tag": "lit",
+                    "val": "1"
+                  },
+                  "second": {
+                    "tag": "lit",
+                    "val": "2"
+                  }
+                },
+                "second": {
+                  "tag": "arith",
+                  "sym": "*",
+                  "first": {
+                    "tag": "lit",
+                    "val": "3"
+                  },
+                  "second": {
+                    "tag": "lit",
+                    "val": "12"
+                  }
+                }
+              },
+              {
+                "tag": "logic",
+                "sym": "&&",
+                "first": {
+                  "tag": "comp",
+                  "sym": ">",
+                  "first": {
+                    "tag": "lit",
+                    "val": "3"
+                  },
+                  "second": {
+                    "tag": "lit",
+                    "val": "2"
+                  }
+                },
+                "second": {
+                  "tag": "comp",
+                  "sym": "<",
+                  "first": {
+                    "tag": "arith",
+                    "sym": "+",
+                    "first": {
+                      "tag": "lit",
+                      "val": "1"
+                    },
+                    "second": {
+                      "tag": "lit",
+                      "val": "2"
+                    }
+                  },
+                  "second": {
+                    "tag": "lit",
+                    "val": "1"
+                  }
+                }
+              },
+              {
+                "tag": "assign",
+                "is_mut": false,
+                "nam": "x",
+                "val": {
+                  "tag": "lit",
+                  "val": "1"
+                }
+              },
+              {
+                "tag": "assign",
+                "is_mut": true,
+                "nam": "y",
+                "val": {
+                  "tag": "lit",
+                  "val": "2"
+                }
+              },
+              {
+                "tag": "assign",
+                "is_mut": false,
+                "nam": "b",
+                "val": {
+                  "tag": "lit",
+                  "val": "3_i32"
+                }
+              },
+              {
+                "tag": "lit",
+                "val": "\"hello\""
+              },
+              {
+                "tag": "lit",
+                "val": "'a'"
+              },
+              {
+                "tag": "lit",
+                "val": "1"
+              },
+              {
+                "tag": "lit",
+                "val": "3.14"
+              },
+              {
+                "tag": "lit",
+                "val": "true"
+              },
+              {
+                "tag": "lit",
+                "val": "123u32"
+              },
+              {
+                "tag": "lit",
+                "val": "123_u32"
+              },
+              {
+                "tag": "assign",
+                "is_mut": true,
+                "nam": "a",
+                "val": {
+                  "tag": "lit",
+                  "val": "0"
+                }
+              },
+              {
+                "tag": "while",
+                "pred": {
+                  "tag": "comp",
+                  "sym": "<",
+                  "first": {
+                    "tag": "nam",
+                    "val": "a"
+                  },
+                  "second": {
+                    "tag": "lit",
+                    "val": "10"
+                  }
+                },
+                "body": {
+                  "tag": "blk",
+                  "body": {
+                    "tag": "seq",
+                    "stmts": [
+                      {
+                        "tag": "compound_assign",
+                        "sym": "+=",
+                        "first": {
+                          "tag": "nam",
+                          "val": "a"
+                        },
+                        "second": {
+                          "tag": "lit",
+                          "val": "1"
+                        }
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "tag": "nam",
+                "val": "a"
+              },
+              {
+                "tag": "nam",
+                "val": "foo"
+              },
+              {
+                "tag": "question",
+                "sym": "?",
+                "first": {
+                  "tag": "nam",
+                  "val": "a"
+                }
+              },
+              {
+                "tag": "borrow",
+                "sym": "&",
+                "first": {
+                  "tag": "nam",
+                  "val": "x"
+                }
+              },
+              {
+                "tag": "borrow",
+                "sym": "&&",
+                "first": {
+                  "tag": "nam",
+                  "val": "y"
+                }
+              },
+              {
+                "tag": "borrow mut",
+                "sym": "&",
+                "first": {
+                  "tag": "nam",
+                  "val": "x"
+                }
+              },
+              {
+                "tag": "borrow mut",
+                "sym": "&&",
+                "first": {
+                  "tag": "nam",
+                  "val": "y"
+                }
+              },
+              {
+                "tag": "deref",
+                "sym": "*",
+                "first": {
+                  "tag": "nam",
+                  "val": "x"
+                }
+              },
+              {
+                "tag": "neg",
+                "sym": "!",
+                "first": {
+                  "tag": "lit",
+                  "val": "true"
+                }
+              },
+              {
+                "tag": "neg",
+                "sym": "-",
+                "first": {
+                  "tag": "lit",
+                  "val": "1"
+                }
+              },
+              {
+                "tag": "assign",
+                "is_mut": true,
+                "nam": "a",
+                "val": {
+                  "tag": "lit",
+                  "val": "0"
+                }
+              },
+              {
+                "tag": "while",
+                "pred": {
+                  "tag": "comp",
+                  "sym": "<",
+                  "first": {
+                    "tag": "nam",
+                    "val": "a"
+                  },
+                  "second": {
+                    "tag": "lit",
+                    "val": "10"
+                  }
+                },
+                "body": {
+                  "tag": "blk",
+                  "body": {
+                    "tag": "seq",
+                    "stmts": [
+                      {
+                        "tag": "cond",
+                        "pred": {
+                          "tag": "comp",
+                          "sym": "==",
+                          "first": {
+                            "tag": "arith",
+                            "sym": "%",
+                            "first": {
+                              "tag": "nam",
+                              "val": "a"
+                            },
+                            "second": {
+                              "tag": "lit",
+                              "val": "2"
+                            }
+                          },
+                          "second": {
+                            "tag": "lit",
+                            "val": "1"
+                          }
+                        },
+                        "cons": {
+                          "tag": "blk",
+                          "body": {
+                            "tag": "seq",
+                            "stmts": [
+                              {
+                                "tag": "break",
+                                "body": null
+                              }
+                            ]
+                          }
+                        },
+                        "alt": null
+                      },
+                      {
+                        "tag": "compound_assign",
+                        "sym": "+=",
+                        "first": {
+                          "tag": "nam",
+                          "val": "a"
+                        },
+                        "second": {
+                          "tag": "lit",
+                          "val": "1"
+                        }
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "tag": "assign",
+                "sym": "=",
+                "first": {
+                  "tag": "nam",
+                  "val": "a"
+                },
+                "second": {
+                  "tag": "lit",
+                  "val": "0"
+                }
+              },
+              {
+                "tag": "while",
+                "pred": {
+                  "tag": "comp",
+                  "sym": "<",
+                  "first": {
+                    "tag": "nam",
+                    "val": "a"
+                  },
+                  "second": {
+                    "tag": "lit",
+                    "val": "10"
+                  }
+                },
+                "body": {
+                  "tag": "blk",
+                  "body": {
+                    "tag": "seq",
+                    "stmts": [
+                      {
+                        "tag": "cond",
+                        "pred": {
+                          "tag": "comp",
+                          "sym": "==",
+                          "first": {
+                            "tag": "arith",
+                            "sym": "%",
+                            "first": {
+                              "tag": "nam",
+                              "val": "a"
+                            },
+                            "second": {
+                              "tag": "lit",
+                              "val": "2"
+                            }
+                          },
+                          "second": {
+                            "tag": "lit",
+                            "val": "1"
+                          }
+                        },
+                        "cons": {
+                          "tag": "blk",
+                          "body": {
+                            "tag": "seq",
+                            "stmts": [
+                              {
+                                "tag": "continue",
+                                "body": null
+                              }
+                            ]
+                          }
+                        },
+                        "alt": null
+                      },
+                      {
+                        "tag": "compound_assign",
+                        "sym": "+=",
+                        "first": {
+                          "tag": "nam",
+                          "val": "a"
+                        },
+                        "second": {
+                          "tag": "lit",
+                          "val": "1"
+                        }
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "tag": "return",
+                "body": {
+                  "tag": "nam",
+                  "val": "a"
+                }
+              }
+            ]
+          }
+        }
+      },
+      ""
+    ]
+  }
+}

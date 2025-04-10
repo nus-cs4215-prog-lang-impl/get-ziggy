@@ -1,0 +1,30 @@
+{
+  "tag": "blk",
+  "body": {
+    "tag": "seq",
+    "stmts": [
+      {
+        "tag": "fun",
+        "nam": "main",
+        "params": [],
+        "body": {
+          "tag": "blk",
+          "body": {
+            "tag": "seq",
+            "stmts": [
+              {
+                "tag": "question",
+                "sym": "?",
+                "first": {
+                  "tag": "nam",
+                  "val": "a"
+                }
+              }
+            ]
+          }
+        }
+      },
+      ""
+    ]
+  }
+}

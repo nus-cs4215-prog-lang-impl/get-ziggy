@@ -1,0 +1,78 @@
+{
+  "tag": "blk",
+  "body": {
+    "tag": "seq",
+    "stmts": [
+      {
+        "tag": "fun",
+        "nam": "main",
+        "params": [],
+        "body": {
+          "tag": "blk",
+          "body": {
+            "tag": "seq",
+            "stmts": [
+              {
+                "tag": "borrow",
+                "sym": "&",
+                "first": {
+                  "tag": "nam",
+                  "val": "x"
+                }
+              },
+              {
+                "tag": "borrow",
+                "sym": "&&",
+                "first": {
+                  "tag": "nam",
+                  "val": "y"
+                }
+              },
+              {
+                "tag": "borrow mut",
+                "sym": "&",
+                "first": {
+                  "tag": "nam",
+                  "val": "x"
+                }
+              },
+              {
+                "tag": "borrow mut",
+                "sym": "&&",
+                "first": {
+                  "tag": "nam",
+                  "val": "y"
+                }
+              },
+              {
+                "tag": "deref",
+                "sym": "*",
+                "first": {
+                  "tag": "nam",
+                  "val": "x"
+                }
+              },
+              {
+                "tag": "neg",
+                "sym": "!",
+                "first": {
+                  "tag": "lit",
+                  "val": "true"
+                }
+              },
+              {
+                "tag": "neg",
+                "sym": "-",
+                "first": {
+                  "tag": "lit",
+                  "val": "1"
+                }
+              }
+            ]
+          }
+        }
+      },
+      ""
+    ]
+  }
+}
