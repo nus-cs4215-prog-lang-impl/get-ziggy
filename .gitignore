@@ -7,7 +7,8 @@ antlr4
 .aider*
 .env
 .direnv
-result
+result/
+out_parse/
 
 # Python
 */__pycache__/
