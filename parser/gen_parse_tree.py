@@ -55,9 +55,12 @@ def get_pattern_id(node, rule_names):
 def get_fn_params(node, rule_names):
     out = []
     for i in range(0, node.getChildCount(), 2):
-        param = node.getChild(i)
-        id = get_pattern_id(param.getChild(0), rule_names).getSymbol()
-        out.append({"nam": id.text, "type": param.getChild(2)})
+        param = node.getChild(i).getChild(0)
+        assert (
+            param.getChildCount() == 3
+        ), "Assertion: Function parameters must be explicitly typed (totalling in 3 items)"
+        id = get_pattern_id(param, rule_names).getSymbol()
+        out.append({"nam": id.text, "type": trim_type(param.getChild(2), rule_names)})
 
     return out
 
@@ -278,6 +281,20 @@ def trim_expr(node, rule_names):
         )
 
 
+def trim_type(node, rule_names):
+    rule_name = rule_names[node.getRuleIndex()]
+
+    if rule_name == "type_":
+        while rule_name != "identifier":
+            assert node.getChildCount() == 1
+            node = node.getChild(0)
+            rule_name = rule_names[node.getRuleIndex()]
+        return node.getChild(0).getSymbol().text
+
+    else:
+        raise NotImplementedError(f"Assertion: Type:::{rule_name}:::not implemented")
+
+
 # TODO: deal with identifiers properly
 def trim_tree(node, rule_names):
     """
@@ -296,17 +313,16 @@ def trim_tree(node, rule_names):
     elif isinstance(node, ParserRuleContext):
         rule_name = rule_names[node.getRuleIndex()]
 
-        # TODO: return type
         if rule_name == "function_":
             fun_name = node.getChild(2).getChild(0).getSymbol().text
 
-            para_node = node.getChild(4)
-            if isinstance(para_node, TerminalNode):
-                params = []
-                body = trim_tree(node.getChild(5), rule_names)
-            else:
-                params = get_fn_params(para_node, rule_names)
-                body = trim_tree(node.getChild(6), rule_names)
+            params = []
+            rtn_type = None
+            body = None
+            for i in range(4, node.getChildCount()):
+                child = node.getChild(i)
+                if isinstance(child, TerminalNode):
+                    continue
 
             return {"fun": {"nam": fun_name, "params": params, "body": body}}
         elif rule_name == "blockExpression":
@@ -333,7 +349,10 @@ def trim_tree(node, rule_names):
             return trim_expr(node, rule_names)
 
         elif rule_name == "letStatement":
-            assert node.getChildCount() == 5, "Assertion: Let statement has 5 children"
+            assert (
+                node.getChildCount() == 5 or node.getChildCount() == 7
+            ), "Assertion: Let statement must have 5 or 7 children"
+
             lhs_node = node.getChild(1).getChild(0).getChild(0)
             if isinstance(lhs_node.getChild(0), TerminalNode):
                 is_mut = True
@@ -342,7 +361,13 @@ def trim_tree(node, rule_names):
                 is_mut = False
                 nam = lhs_node.getChild(0).getChild(0).getSymbol().text
 
-            rhs_node = trim_tree(node.getChild(3), rule_names)
+            offset = 0
+            type_name = None
+            if node.getChildCount() == 7:
+                offset = 2
+                type_name = trim_type(node.getChild(3), rule_names)
+
+            rhs_node = trim_tree(node.getChild(offset + 3), rule_names)
             return {
                 "assign": {
                     "is_mut": is_mut,
@@ -399,6 +424,7 @@ if __name__ == "__main__":
 # NOTE: FOOTNOTE
 # - Operator precendence We don't impl
 # ---- We don't do it, cause the antlr parse tree is left to right recursive
+# ---- Also source doesn't do it either
 # (expression
 #     (expression (identifier y)) +
 #         (expression
