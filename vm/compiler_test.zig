@@ -239,12 +239,13 @@ test "compile simple program: let x = 1 + 2; x" {
     // 1: Ldc(Int=2)
     // 2: Binop(Add)
     // 3: Assign("x")
-    // 4: Ld("x")
-    // 5: Done
+    // 4: Pop       // because we pop the value of of the finished statement
+    // 5: Ld("x")
+    // 6: Done
 
     try compiler.printCompiledMicrocode();
 
-    try testing.expectEqual(@as(usize, 6), instructions.len);
+    try testing.expectEqual(@as(usize, 7), instructions.len);
 
     // Check specific instructions
     try testing.expectEqual(InstructionData{ .Ldc = .{ .Int = 1 } }, instructions[0].data);
@@ -256,13 +257,16 @@ test "compile simple program: let x = 1 + 2; x" {
         .Assign => |name| try testing.expectEqualStrings("x", name),
         else => return error.TestUnexpectedInstructionType,
     }
-
     switch (instructions[4].data) {
+        .Pop => _ = void,
+        else => return error.TestUnexpectedInstructionType,
+    }
+    switch (instructions[5].data) {
         .Ld => |name| try testing.expectEqualStrings("x", name),
         else => return error.TestUnexpectedInstructionType,
     }
 
-    try testing.expectEqual(InstructionData.Done, instructions[5].data);
+    try testing.expectEqual(InstructionData.Done, instructions[6].data);
 }
 
 test "conditional_compile" {
