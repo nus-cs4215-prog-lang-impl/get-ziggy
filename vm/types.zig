@@ -65,7 +65,7 @@ pub const AstNode = union(enum) {
     WhileLoop: struct { condition: *AstNode, body: *AstNode },
 };
 
-pub const InstructionData = union(enum) {
+pub const Instruction = union(enum) {
     Ldc: Value, // Load constant
     Ld: []const u8, // Load variable by name
     Assign: []const u8, // Assign to variable name
@@ -81,9 +81,4 @@ pub const InstructionData = union(enum) {
     TailCall: struct { arity: usize }, // Tail call optimization
     Reset: void, // Return from function / unwind stack frame
     Done: void, // Program termination
-};
-
-// Instruction Declaration
-pub const Instruction = struct {
-    data: InstructionData,
 };

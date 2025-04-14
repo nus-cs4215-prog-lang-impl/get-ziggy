@@ -10,7 +10,6 @@ const Param = types.Param;
 const CompileErrors = types.CompileErrors;
 const AstNode = types.AstNode;
 const Instruction = types.Instruction;
-const InstructionData = types.InstructionData;
 
 pub const Compiler = struct {
     alloc: Allocator,
