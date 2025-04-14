@@ -80,7 +80,6 @@ pub const Compiler = struct {
         switch (self.instructions.items[instr_index].data) {
             .Jof => |*addr| addr.* = target_addr,
             .Goto => |*addr| addr.* = target_addr,
-            .JDF => |*addr| addr.* = target_addr,
             else => @panic("Attempting to patch non-jump instruction"),
         }
     }
@@ -159,7 +158,7 @@ pub const Compiler = struct {
         try self.addInstr(.{ .Assign = name });
     }
 
-    fn compileLambda(self: *Compiler, params: []const Param, body: *const AstNode) CompileErrors!void {
+    fn compileLambda(self: *Compiler, params: []Param, body: *AstNode) CompileErrors!void {
         // Compiling functions/lambdas requires careful handling of scope and jumps.
         // Technique: Jump over the body, compile body, then load function object.
         // 1. Add Goto to jump over the function body, store index
@@ -230,47 +229,50 @@ pub const Compiler = struct {
                 try self.addInstr(.Reset);
             },
 
-            // .LogicalOp => |log_op_data| {
-            //     // Logical operators require short-circuiting via jumps.
-            //     switch (log_op_data.op) {
-            //         .And => {
-            //             // 1. Compile left
-            //             try self.compile(log_op_data.left);
-            //             // 2. Add Jof (if left is false, result is false, jump to end)
-            //             const jof_idx = try self.addInstr(.{ .Jof = 0 });
-            //             // 3. Left was true, result is the right side. Pop the true value from left.
-            //             _ = try self.addInstr(.Pop);
-            //             // 4. Compile right
-            //             try self.compile(log_op_data.right);
-            //             // 5. Get end address
-            //             const end_addr = self.nextInstrAddr();
-            //             // 6. Patch Jof
-            //             self.patchJump(jof_idx, end_addr);
-            //             // Stack now has: result of right (if left was true), or false (if left was false)
-            //         },
-            //         .Or => {
-            //             // 1. Compile left
-            //             try self.compile(log_op_data.left);
-            //             // 2. Add Jof (if left is false, jump to compile right)
-            //             const jof_idx = try self.addInstr(.{ .Jof = 0 });
-            //             // 3. Left was true. Result is true. Jump to end.
-            //             const goto_idx = try self.addInstr(.{ .Goto = 0 });
-            //             // 4. Get address for right side compilation
-            //             const right_addr = self.nextInstrAddr();
-            //             // 5. Patch Jof to jump here
-            //             self.patchJump(jof_idx, right_addr);
-            //             // 6. Left was false. Pop the false value.
-            //             _ = try self.addInstr(.Pop);
-            //             // 7. Compile right
-            //             try self.compile(log_op_data.right);
-            //             // 8. Get end address
-            //             const end_addr = self.nextInstrAddr();
-            //             // 9. Patch Goto to jump here
-            //             self.patchJump(goto_idx, end_addr);
-            //             // Stack now has: true (if left was true), or result of right (if left was false)
-            //         },
-            //     }
-            // },
+            .LogicalOp => |log_op_data| {
+                // Logical operators require short-circuiting via jumps.
+                switch (log_op_data.op) {
+                    .And => {
+                        // 1. Compile left
+                        try self.compile(log_op_data.left);
+                        // 2. Add Jof (if left is false, result is false, jump to end)
+                        const jof_idx = self.nextInstrAddr();
+                        try self.addInstr(.{ .Jof = 0 });
+                        // 3. Left was true, result is the right side. Pop the true value from left.
+                        try self.addInstr(.Pop);
+                        // 4. Compile right
+                        try self.compile(log_op_data.right);
+                        // 5. Get end address
+                        const end_addr = self.nextInstrAddr();
+                        // 6. Patch Jof
+                        self.patchJump(jof_idx, end_addr);
+                        // Stack now has: result of right (if left was true), or false (if left was false)
+                    },
+                    .Or => {
+                        // 1. Compile left
+                        try self.compile(log_op_data.left);
+                        // 2. Add Jof (if left is false, jump to compile right)
+                        const jof_idx = self.nextInstrAddr();
+                        try self.addInstr(.{ .Jof = 0 });
+                        // 3. Left was true. Result is true. Jump to end.
+                        const goto_idx = self.nextInstrAddr();
+                        try self.addInstr(.{ .Goto = 0 });
+                        // 4. Get address for right side compilation
+                        const right_addr = self.nextInstrAddr();
+                        // 5. Patch Jof to jump here
+                        self.patchJump(jof_idx, right_addr);
+                        // 6. Left was false. Pop the false value.
+                        try self.addInstr(.Pop);
+                        // 7. Compile right
+                        try self.compile(log_op_data.right);
+                        // 8. Get end address
+                        const end_addr = self.nextInstrAddr();
+                        // 9. Patch Goto to jump here
+                        self.patchJump(goto_idx, end_addr);
+                        // Stack now has: true (if left was true), or result of right (if left was false)
+                    },
+                }
+            },
 
             .WhileLoop => |loop_data| {
                 // 1. Get address for condition check (loop start)
@@ -293,12 +295,12 @@ pub const Compiler = struct {
             },
 
             // TODO: Remove this
-            else => {
-                // Get the tag name for better error reporting
-                const tag_name = @tagName(node.*);
-                std.debug.print("Compilation error: Unimplemented AST node type: {s}\n", .{tag_name});
-                return CompileErrors.UnimplementedAstNode;
-            },
+            // else => {
+            //     // Get the tag name for better error reporting
+            //     const tag_name = @tagName(node.*);
+            //     std.debug.print("Compilation error: Unimplemented AST node type: {s}\n", .{tag_name});
+            //     return CompileErrors.UnimplementedAstNode;
+            // },
         }
     }
 
