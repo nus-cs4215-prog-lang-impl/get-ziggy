@@ -1,99 +1,18 @@
 const std = @import("std");
 const Allocator = std.mem.Allocator;
+const types = @import("types.zig");
 
-// Primitive Types
-// We differentiate betweeen the primitive types in rust and zig
-// by using PascalCase for the Rust types
-const Value = union(enum) {
-    // TODO: Might want to add char as primitive
-    Int: i64,
-    Float: f64,
-    Bool: bool,
-    String: []const u8, // TODO: Rust doesn't really have Strings as primitives, so this might not be needed
-    Undefined: void,
-};
+const Value = types.Value;
+const UnaryOperator = types.UnaryOperator;
+const BinaryOperator = types.BinaryOperator;
+const LogicalOperator = types.LogicalOperator;
+const Param = types.Param;
+const CompileErrors = types.CompileErrors;
+const AstNode = types.AstNode;
+const Instruction = types.Instruction;
+const InstructionData = types.InstructionData;
 
-// Enum Types
-const UnaryOperator = enum {
-    Negate, // -
-    Not, // !
-};
-
-const BinaryOperator = enum {
-    Add, // +
-    Sub, // -
-    Mul, // *
-    Div, // /
-    Mod, // %
-    Eq, // ==
-    Neq, // !=
-    Lt, // <
-    Lte, // <=
-    Gt, // >
-    Gte, // >=
-};
-
-const LogicalOperator = enum {
-    And, // &&
-    Or, // ||
-};
-
-const Param = struct {
-    name: []const u8,
-    // TODO: type_info?
-};
-
-// Explicit Error Set
-const CompileErrors = error{
-    UnimplementedAstNode,
-    OutOfMemory,
-};
-
-// AstNode Declaration
-const AstNode = struct {
-    data: AstData,
-    const AstData = union(enum) {
-        Literal: Value,
-        Name: []const u8,
-        App: struct { func: *AstNode, args: []*AstNode },
-        LogicalOp: struct { op: LogicalOperator, left: *AstNode, right: *AstNode },
-        BinaryOp: struct { op: BinaryOperator, left: *AstNode, right: *AstNode },
-        UnaryOp: struct { op: UnaryOperator, operand: *AstNode },
-        Lambda: struct { params: []Param, body: *AstNode },
-        Sequence: struct { statements: []*AstNode },
-        Block: struct { body: *AstNode },
-        VarDecl: struct { name: []const u8, value: *AstNode },
-        Assignment: struct { name: []const u8, value: *AstNode },
-        Conditional: struct { condition: *AstNode, cons: *AstNode, alt: *AstNode },
-        FnDecl: struct { name: []const u8, params: []Param, body: *AstNode },
-        Return: struct { value: ?*AstNode },
-        WhileLoop: struct { condition: *AstNode, body: *AstNode },
-    };
-};
-
-// Instruction Declaration
-const Instruction = struct {
-    data: InstructionData,
-    const InstructionData = union(enum) {
-        Ldc: Value, // Load constant
-        Ld: []const u8, // Load variable by name
-        Assign: []const u8, // Assign to variable name
-        Unop: UnaryOperator,
-        Binop: BinaryOperator,
-        Pop: void, // Pop top value from stack
-        Jof: usize, // Jump if false: target instruction address/index
-        Goto: usize, // Unconditional jump: target instruction address/index
-        EnterScope: struct { locals: [][]const u8 }, // Names declared in the scope
-        ExitScope: void,
-        Ldf: struct { params: []Param, addr: usize }, // Load function: Addr of function body start
-        Call: struct { arity: usize }, // Function call
-        TailCall: struct { arity: usize }, // Tail call optimization
-        Reset: void, // Return from function / unwind stack frame
-        Done: void, // Program termination
-    };
-};
-
-const Compiler = struct {
+pub const Compiler = struct {
     alloc: Allocator,
     instructions: std.ArrayList(Instruction),
 
@@ -109,7 +28,7 @@ const Compiler = struct {
         self.instructions.deinit();
     }
 
-    fn addInstr(self: *Compiler, instruction_data: Instruction.InstructionData) !void {
+    fn addInstr(self: *Compiler, instruction_data: InstructionData) !void {
         // const index = self.instructions.items.len;
         try self.instructions.append(.{ .data = instruction_data });
     }
@@ -120,7 +39,7 @@ const Compiler = struct {
     }
 
     fn scanNodeRecursive(self: *Compiler, node: *const AstNode, locals: *std.ArrayList([]const u8)) !void {
-        switch (node.data) {
+        switch (node.*) {
             .Literal, .Name, .Conditional => {},
             .App => |app_data| {
                 try self.scanNodeRecursive(app_data.func, locals);
@@ -218,7 +137,7 @@ const Compiler = struct {
     // https://github.com/ziglang/zig/issues/763
     // TODO: When all cases are implemented, we should not need CompileErrors anymore?
     pub fn compile(self: *Compiler, node: *const AstNode) CompileErrors!void {
-        switch (node.data) {
+        switch (node.*) {
             .Literal => |val| try self.addInstr(.{ .Ldc = val }),
             .Name => |name| try self.addInstr(.{ .Ld = name }),
             .BinaryOp => |op_data| try self.compileBinaryOp(op_data.left, op_data.right, op_data.op),
@@ -386,7 +305,7 @@ const Compiler = struct {
             // TODO: Remove this
             else => {
                 // Get the tag name for better error reporting
-                const tag_name = @tagName(node.data);
+                const tag_name = @tagName(node.*);
                 std.debug.print("Compilation error: Unimplemented AST node type: {s}\n", .{tag_name});
                 return CompileErrors.UnimplementedAstNode;
             },
@@ -411,12 +330,12 @@ pub fn main() !void {
     // Example AST: let x = 1 + 2; x
     // Node definitions (usually built by a parser)
     // These can remain const because we take *const pointers below
-    var one = AstNode{ .data = .{ .Literal = .{ .Int = 1 } } };
-    var two = AstNode{ .data = .{ .Literal = .{ .Int = 2 } } };
+    var one = AstNode{ .Literal = .{ .Int = 1 } };
+    var two = AstNode{ .Literal = .{ .Int = 2 } };
     // The struct fields now expect *const AstNode, so &one and &two work correctly
-    var add_expr = AstNode{ .data = .{ .BinaryOp = .{ .op = .Add, .left = &one, .right = &two } } };
-    var var_decl = AstNode{ .data = .{ .VarDecl = .{ .name = "x", .value = &add_expr } } };
-    var load_x = AstNode{ .data = .{ .Name = "x" } };
+    var add_expr = AstNode{ .BinaryOp = .{ .op = .Add, .left = &one, .right = &two } };
+    var var_decl = AstNode{ .VarDecl = .{ .name = "x", .value = &add_expr } };
+    var load_x = AstNode{ .Name = "x" };
 
     // Sequence of statements - type changed to []*const AstNode
     var statements_slice = [_]*AstNode{
@@ -430,7 +349,7 @@ pub fn main() !void {
     // statements[0] = &var_decl;
     // statements[1] = &load_x;
 
-    const program = AstNode{ .data = .{ .Sequence = .{ .statements = &statements_slice } } };
+    const program = AstNode{ .Sequence = .{ .statements = &statements_slice } };
 
     std.debug.print("Compiling program: let x = 1 + 2; x\n", .{});
     try compiler.compileProgram(&program);
