@@ -148,17 +148,13 @@ pub const Compiler = struct {
 
             // --- More Complex Cases (GPT Placeholders) ---
 
-            // .App => |app_data| {
-            //     // 1. Compile arguments (right to left or left to right? Depends on VM convention)
-            //     //    Let's assume left-to-right evaluation for args.
-            //     for (app_data.args) |arg| {
-            //         try self.compile(arg);
-            //     }
-            //     // 2. Compile the function expression
-            //     try self.compile(app_data.func);
-            //     // 3. Add Call instruction
-            //     _ = try self.addInstr(.{ .Call = .{ .arity = app_data.args.len } });
-            // },
+            .App => |app_data| {
+                try self.compile(app_data.func);
+                for (app_data.args) |arg| {
+                    try self.compile(arg);
+                }
+                _ = try self.addInstr(.{ .Call = .{ .arity = app_data.args.len } });
+            },
 
             .Conditional => |cond_data| {
                 // 1. Compile condition
@@ -285,26 +281,25 @@ pub const Compiler = struct {
             //     }
             // },
 
-            // .WhileLoop => |loop_data| {
-            //     // 1. Get address for condition check (loop start)
-            //     const cond_addr = self.nextInstrAddr();
-            //     // 2. Compile condition
-            //     try self.compile(loop_data.condition);
-            //     // 3. Add Jof to jump past the loop body if condition is false
-            //     const jof_idx = try self.addInstr(.{ .Jof = 0 });
-            //     // 4. Compile loop body
-            //     try self.compile(loop_data.body);
-            //     // 5. Pop the result of the body (loop body result usually discarded)
-            //     _ = try self.addInstr(.Pop);
-            //     // 6. Add Goto to jump back to the condition check
-            //     _ = try self.addInstr(.{ .Goto = cond_addr });
-            //     // 7. Get address after the loop
-            //     const after_loop_addr = self.nextInstrAddr();
-            //     // 8. Patch Jof to jump here
-            //     self.patchJump(jof_idx, after_loop_addr);
-            //     // What should a while loop evaluate to? Undefined?
-            //     //_ = try self.addInstr(.{ .Ldc = .{ .Undefined = .{} } });
-            // },
+            .WhileLoop => |loop_data| {
+                // 1. Get address for condition check (loop start)
+                const cond_addr = self.nextInstrAddr();
+                // 2. Compile condition
+                try self.compile(loop_data.condition);
+                // 3. Add Jof to jump past the loop body if condition is false
+                const jof_idx = self.nextInstrAddr();
+                try self.addInstr(.{ .Jof = 0 });
+                // 4. Compile loop body
+                try self.compile(loop_data.body);
+                // 5. Pop the result of the body (loop body result usually discarded)
+                try self.addInstr(.Pop);
+                // 6. Add Goto to jump back to the condition check
+                try self.addInstr(.{ .Goto = cond_addr });
+                // 7. Get address after the loop
+                const after_loop_addr = self.nextInstrAddr();
+                // 8. Patch Jof to jump here
+                self.patchJump(jof_idx, after_loop_addr);
+            },
 
             // TODO: Remove this
             else => {

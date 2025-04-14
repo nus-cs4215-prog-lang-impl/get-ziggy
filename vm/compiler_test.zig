@@ -333,3 +333,37 @@ test "conditional_compile" {
     // 22: Done
 
 }
+
+test "while_loop_comp" {
+    // Setup
+    var compiler = Compiler.init(testing.allocator);
+    defer compiler.deinit();
+
+    var zero = AstNode{ .Literal = .{ .Int = 0 } };
+    var decl = AstNode{ .VarDecl = .{ .name = "x", .value = &zero } };
+
+    var x = AstNode{ .Name = "x" };
+    var one = AstNode{ .Literal = .{ .Int = 1 } };
+    var add_expr = AstNode{ .BinaryOp = .{ .op = .Add, .left = &x, .right = &one } };
+    var var_pp = AstNode{ .VarDecl = .{ .name = "x", .value = &add_expr } };
+
+    var ten = AstNode{ .Literal = .{ .Int = 10 } };
+    var comp_expr = AstNode{ .BinaryOp = .{ .op = .Lt, .left = &x, .right = &ten } };
+    var body_stmt = [_]*AstNode{
+        &var_pp,
+    };
+    var body = AstNode{ .Sequence = .{ .statements = &body_stmt } };
+    var while_loop = AstNode{ .WhileLoop = .{ .condition = &comp_expr, .body = &body } };
+
+    var statements_slice = [_]*AstNode{
+        &decl,
+        &while_loop,
+    };
+
+    const program = AstNode{ .Sequence = .{ .statements = &statements_slice } };
+    // Compile the program
+    try compiler.compileProgram(&program);
+
+    // Verify the generated instructions
+    try compiler.printCompiledMicrocode();
+}
