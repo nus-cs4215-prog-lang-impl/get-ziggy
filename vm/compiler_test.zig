@@ -389,3 +389,26 @@ test "fn_decl_test" {
     // Verify the generated instructions
     try compiler.printCompiledMicrocode();
 }
+
+test "logical_test" {
+    // Setup
+    var compiler = Compiler.init(testing.allocator);
+    defer compiler.deinit();
+
+    var left = AstNode{ .Literal = .{ .Bool = true } };
+    var right = AstNode{ .Literal = .{ .Bool = false } };
+    var log_and = AstNode{ .LogicalOp = .{ .op = .And, .left = &left, .right = &right } };
+    var log_or = AstNode{ .LogicalOp = .{ .op = .Or, .left = &left, .right = &right } };
+
+    var statements_slice = [_]*AstNode{
+        &log_and,
+        &log_or,
+    };
+
+    const program = AstNode{ .Sequence = .{ .statements = &statements_slice } };
+    // Compile the program
+    try compiler.compileProgram(&program);
+
+    // Verify the generated instructions
+    try compiler.printCompiledMicrocode();
+}
