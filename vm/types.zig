@@ -34,12 +34,7 @@ pub const UnaryOperator = enum {
     }
 };
 
-pub const BinaryOperator = enum {
-    Add, // +
-    Sub, // -
-    Mul, // *
-    Div, // /
-    Mod, // %
+pub const CompOperator = enum {
     Eq, // ==
     Neq, // !=
     Lt, // <
@@ -47,13 +42,8 @@ pub const BinaryOperator = enum {
     Gt, // >
     Gte, // >=
 
-    pub fn jsonStringify(self: BinaryOperator, writer: anytype) !void {
+    pub fn jsonStringify(self: CompOperator, writer: anytype) !void {
         try writer.write(switch (self) {
-            .Add => "+",
-            .Sub => "-",
-            .Mul => "*",
-            .Div => "/",
-            .Mod => "%",
             .Eq => "==",
             .Neq => "!=",
             .Lt => "<",
@@ -63,7 +53,48 @@ pub const BinaryOperator = enum {
         });
     }
 
-    pub fn jsonParse(allocator: std.mem.Allocator, value: *json.Scanner, options: json.ParseOptions) !BinaryOperator {
+    pub fn jsonParse(allocator: std.mem.Allocator, value: *json.Scanner, options: json.ParseOptions) !CompOperator {
+        const val = try json.innerParse(json.Value, allocator, value, options);
+        const str = val.string;
+        // std.debug.print("val: {}\n", .{val});
+        if (std.mem.eql(u8, str, "==")) return .Eq;
+        if (std.mem.eql(u8, str, "!=")) return .Neq;
+        if (std.mem.eql(u8, str, "<")) return .Lt;
+        if (std.mem.eql(u8, str, "<=")) return .Lte;
+        if (std.mem.eql(u8, str, ">")) return .Gt;
+        if (std.mem.eql(u8, str, ">=")) return .Gte;
+        return error.InvalidEnumTag;
+    }
+};
+
+pub const ArithOperator = enum {
+    Add, // +
+    Sub, // -
+    Mul, // *
+    Div, // /
+    Mod, // %
+    Bitxor, // ^
+    Bitor, // |
+    Bitand, // &
+    Shl, // <<
+    Shr, // >>
+
+    pub fn jsonStringify(self: ArithOperator, writer: anytype) !void {
+        try writer.write(switch (self) {
+            .Add => "+",
+            .Sub => "-",
+            .Mul => "*",
+            .Div => "/",
+            .Mod => "%",
+            .Bitxor => "^",
+            .Bitor => "|",
+            .Bitand => "&",
+            .Shl => "<<",
+            .Shr => ">>",
+        });
+    }
+
+    pub fn jsonParse(allocator: std.mem.Allocator, value: *json.Scanner, options: json.ParseOptions) !ArithOperator {
         const val = try json.innerParse(json.Value, allocator, value, options);
         const str = val.string;
         // std.debug.print("val: {}\n", .{val});
@@ -72,12 +103,11 @@ pub const BinaryOperator = enum {
         if (std.mem.eql(u8, str, "*")) return .Mul;
         if (std.mem.eql(u8, str, "/")) return .Div;
         if (std.mem.eql(u8, str, "%")) return .Mod;
-        if (std.mem.eql(u8, str, "==")) return .Eq;
-        if (std.mem.eql(u8, str, "!=")) return .Neq;
-        if (std.mem.eql(u8, str, "<")) return .Lt;
-        if (std.mem.eql(u8, str, "<=")) return .Lte;
-        if (std.mem.eql(u8, str, ">")) return .Gt;
-        if (std.mem.eql(u8, str, ">=")) return .Gte;
+        if (std.mem.eql(u8, str, "^")) return .Bitxor;
+        if (std.mem.eql(u8, str, "|")) return .Bitor;
+        if (std.mem.eql(u8, str, "&")) return .Bitand;
+        if (std.mem.eql(u8, str, "<<")) return .Shl;
+        if (std.mem.eql(u8, str, ">>")) return .Shr;
         return error.InvalidEnumTag;
     }
 };
@@ -99,6 +129,52 @@ pub const LogicalOperator = enum {
         // std.debug.print("val: {}\n", .{val});
         if (std.mem.eql(u8, str, "&&")) return .And;
         if (std.mem.eql(u8, str, "||")) return .Or;
+        return error.InvalidEnumTag;
+    }
+};
+
+pub const BinaryOperator = union(enum) {
+    comp: CompOperator,
+    logic: LogicalOperator,
+    arith: ArithOperator,
+
+    pub fn jsonStringify(self: BinaryOperator, writer: anytype) !void {
+        switch (self) {
+            .comp => |comp_op| try comp_op.jsonStringify(writer),
+            .logic => |logic_op| try logic_op.jsonStringify(writer),
+            .arith => |arith_op| try arith_op.jsonStringify(writer),
+        }
+    }
+
+    pub fn jsonParse(allocator: std.mem.Allocator, value: *json.Scanner, options: json.ParseOptions) !BinaryOperator {
+        const val = try json.innerParse(json.Value, allocator, value, options);
+        const str = val.string;
+        // std.debug.print("val: {}\n", .{val});
+
+        // Try to parse as CompOperator
+        if (std.mem.eql(u8, str, "==")) return BinaryOperator{ .comp = .Eq };
+        if (std.mem.eql(u8, str, "!=")) return BinaryOperator{ .comp = .Neq };
+        if (std.mem.eql(u8, str, "<")) return BinaryOperator{ .comp = .Lt };
+        if (std.mem.eql(u8, str, "<=")) return BinaryOperator{ .comp = .Lte };
+        if (std.mem.eql(u8, str, ">")) return BinaryOperator{ .comp = .Gt };
+        if (std.mem.eql(u8, str, ">=")) return BinaryOperator{ .comp = .Gte };
+
+        // Try to parse as LogicalOperator
+        if (std.mem.eql(u8, str, "&&")) return BinaryOperator{ .logic = .And };
+        if (std.mem.eql(u8, str, "||")) return BinaryOperator{ .logic = .Or };
+
+        // Try to parse as ArithOperator
+        if (std.mem.eql(u8, str, "+")) return BinaryOperator{ .arith = .Add };
+        if (std.mem.eql(u8, str, "-")) return BinaryOperator{ .arith = .Sub };
+        if (std.mem.eql(u8, str, "*")) return BinaryOperator{ .arith = .Mul };
+        if (std.mem.eql(u8, str, "/")) return BinaryOperator{ .arith = .Div };
+        if (std.mem.eql(u8, str, "%")) return BinaryOperator{ .arith = .Mod };
+        if (std.mem.eql(u8, str, "^")) return BinaryOperator{ .arith = .Bitxor };
+        if (std.mem.eql(u8, str, "|")) return BinaryOperator{ .arith = .Bitor };
+        if (std.mem.eql(u8, str, "&")) return BinaryOperator{ .arith = .Bitand };
+        if (std.mem.eql(u8, str, "<<")) return BinaryOperator{ .arith = .Shl };
+        if (std.mem.eql(u8, str, ">>")) return BinaryOperator{ .arith = .Shr };
+
         return error.InvalidEnumTag;
     }
 };
@@ -133,12 +209,30 @@ pub const AstNode = union(enum) {
     WhileLoop: struct { condition: *AstNode, body: *AstNode },
 };
 
+pub const JsonAstNode = union(enum) {
+    lit: Value, // TODO: This Value might always parse a string
+    nam: []const u8,
+    app: struct { nam: []const u8, args: []*AstNode }, // NOTE: This differs from initial, becuase we aren't using AstNode for func
+    logic: struct { op: LogicalOperator, left: *AstNode, right: *AstNode },
+    arith: struct { op: ArithOperator, left: *AstNode, right: *AstNode },
+    neg: struct { op: UnaryOperator, operand: *AstNode },
+    Lambda: struct { params: []Param, body: *AstNode },
+    seq: struct { stmts: []*AstNode },
+    blk: struct { body: *AstNode },
+    VarDecl: struct { name: []const u8, value: *AstNode },
+    Assignment: struct { name: []const u8, value: *AstNode },
+    Conditional: struct { condition: *AstNode, cons: *AstNode, alt: *AstNode },
+    FnDecl: struct { name: []const u8, params: []Param, body: *AstNode },
+    Return: struct { value: ?*AstNode },
+    WhileLoop: struct { condition: *AstNode, body: *AstNode },
+};
+
 pub const Instruction = union(enum) {
     Ldc: Value, // Load constant
     Ld: []const u8, // Load variable by name
     Assign: []const u8, // Assign to variable name
     Unop: UnaryOperator,
-    Binop: BinaryOperator,
+    Binop: BinaryOperator, // TODO: Fix this with tagged unions, override the Json
     Pop: void, // Pop top value from stack
     Jof: usize, // Jump if false: target instruction address/index
     Goto: usize, // Unconditional jump: target instruction address/index

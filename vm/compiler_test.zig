@@ -63,7 +63,7 @@ test "serialize AstNode to JSON" {
 
         const node = AstNode{
             .BinaryOp = .{
-                .op = .Add,
+                .op = BinaryOperator{ .arith = .Add },
                 .left = left,
                 .right = right,
             },
@@ -136,7 +136,7 @@ test "parse JSON to AstNode" {
         std.debug.print("Parsed item: {}\n", .{item.value});
 
         try testing.expectEqual(AstNode.BinaryOp, std.meta.activeTag(item.value));
-        try testing.expectEqual(BinaryOperator.Add, item.value.BinaryOp.op);
+        try testing.expectEqual(BinaryOperator{ .arith = .Add }, item.value.BinaryOp.op);
 
         const left = item.value.BinaryOp.left;
         try testing.expectEqual(AstNode.Literal, std.meta.activeTag(left.*));
@@ -163,7 +163,7 @@ test "round trip AstNode to JSON and back" {
 
     const original_node = AstNode{
         .BinaryOp = .{
-            .op = .Add,
+            .op = BinaryOperator{ .arith = .Add },
             .left = left,
             .right = right,
         },
@@ -185,7 +185,7 @@ test "round trip AstNode to JSON and back" {
     // Verify the structure is preserved
     try testing.expectEqual(AstNode.BinaryOp, std.meta.activeTag(parsed.value));
     // The parsed value should still be the correct enum member
-    try testing.expectEqual(BinaryOperator.Add, parsed.value.BinaryOp.op);
+    try testing.expectEqual(BinaryOperator{ .arith = .Add }, parsed.value.BinaryOp.op);
 
     // Check left node (should be a literal with value 10)
     const parsed_left = parsed.value.BinaryOp.left;
@@ -207,7 +207,7 @@ test "compile simple program: let x = 1 + 2; x" {
     // Create AST for: let x = 1 + 2; x
     var one = AstNode{ .Literal = .{ .Int = 1 } };
     var two = AstNode{ .Literal = .{ .Int = 2 } };
-    var add_expr = AstNode{ .BinaryOp = .{ .op = .Add, .left = &one, .right = &two } };
+    var add_expr = AstNode{ .BinaryOp = .{ .op = BinaryOperator{ .arith = .Add }, .left = &one, .right = &two } };
     var var_decl = AstNode{ .VarDecl = .{ .name = "x", .value = &add_expr } };
     var load_x = AstNode{ .Name = "x" };
 
@@ -240,7 +240,7 @@ test "compile simple program: let x = 1 + 2; x" {
     // Check specific instructions
     try testing.expectEqual(Instruction{ .Ldc = .{ .Int = 1 } }, instructions[0]);
     try testing.expectEqual(Instruction{ .Ldc = .{ .Int = 2 } }, instructions[1]);
-    try testing.expectEqual(Instruction{ .Binop = .Add }, instructions[2]);
+    try testing.expectEqual(Instruction{ .Binop = BinaryOperator{ .arith = .Add } }, instructions[2]);
 
     // For string comparisons, we need to check the tag and then the string content
     switch (instructions[3]) {
