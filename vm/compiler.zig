@@ -80,6 +80,7 @@ pub const Compiler = struct {
         switch (self.instructions.items[instr_index].data) {
             .Jof => |*addr| addr.* = target_addr,
             .Goto => |*addr| addr.* = target_addr,
+            .JDF => |*addr| addr.* = target_addr,
             else => @panic("Attempting to patch non-jump instruction"),
         }
     }
@@ -182,62 +183,47 @@ pub const Compiler = struct {
                 self.patchJump(jof_idx, alt_addr);
             },
 
-            // .Lambda => |lambda_data| {
-            //     // Compiling functions/lambdas requires careful handling of scope and jumps.
-            //     // Technique: Jump over the body, compile body, then load function object.
-            //     // 1. Add Goto to jump over the function body, store index
-            //     const goto_idx = try self.addInstr(.{ .Goto = 0 }); // Placeholder
-            //     // 2. Get the start address of the function body
-            //     const func_body_addr = self.nextInstrAddr();
-            //     // 3. Compile the function body
-            //     //    Need EnterScope for params + body locals, then ExitScope? Or handled by Call/Reset?
-            //     //    Let's assume Call handles scope setup based on Ldf params.
-            //     try self.compile(lambda_data.body);
-            //     // 4. Add Reset instruction at the end of the body to return
-            //     _ = try self.addInstr(.Reset);
-            //     // 5. Get address after the function body
-            //     const after_func_addr = self.nextInstrAddr();
-            //     // 6. Patch the initial Goto to jump to after_func_addr
-            //     self.patchJump(goto_idx, after_func_addr);
-            //     // 7. Add the Ldf instruction *before* the jump (tricky, need to insert or plan ahead)
-            //     //    Alternative: Add Ldf *now*, pointing to func_body_addr. This is simpler.
-            //     _ = try self.addInstr(.{ .Ldf = .{ .params = lambda_data.params, .addr = func_body_addr } });
-            //     // This puts the function object on the stack *after* the jump over its code.
-            // },
+            .Lambda => |lambda_data| {
+                // Compiling functions/lambdas requires careful handling of scope and jumps.
+                // Technique: Jump over the body, compile body, then load function object.
+                // 1. Add Goto to jump over the function body, store index
+                const goto_idx = self.nextInstrAddr();
+                try self.addInstr(.{ .Goto = 0 }); // Placeholder
+                // 2. Get the start address of the function body
+                const func_body_addr = self.nextInstrAddr();
+                // 3. Compile the function body
+                //    Need EnterScope for params + body locals, then ExitScope? Or handled by Call/Reset?
+                //    Let's assume Call handles scope setup based on Ldf params.
+                try self.compile(lambda_data.body);
+                // 4. Add Reset instruction at the end of the body to return
+                try self.addInstr(.Reset);
+                // 5. Get address after the function body
+                const after_func_addr = self.nextInstrAddr();
+                // 6. Patch the initial Goto to jump to after_func_addr
+                self.patchJump(goto_idx, after_func_addr);
+                // 7. Add the Ldf instruction *before* the jump (tricky, need to insert or plan ahead)
+                //    Alternative: Add Ldf *now*, pointing to func_body_addr. This is simpler.
+                try self.addInstr(.{ .Ldf = .{ .params = lambda_data.params, .addr = func_body_addr } });
+                // This puts the function object on the stack *after* the jump over its code.
+            },
 
-            // .FnDecl => |fndecl_data| {
-            //     // Similar to Lambda, but assigns the resulting function object to a name.
-            //     // 1. Add Goto to jump over the function body
-            //     const goto_idx = try self.addInstr(.{ .Goto = 0 });
-            //     // 2. Get body start address
-            //     const func_body_addr = self.nextInstrAddr();
-            //     // 3. Compile body
-            //     try self.compile(fndecl_data.body);
-            //     // 4. Add Reset at end of body
-            //     _ = try self.addInstr(.Reset);
-            //     // 5. Get address after body
-            //     const after_func_addr = self.nextInstrAddr();
-            //     // 6. Patch Goto
-            //     self.patchJump(goto_idx, after_func_addr);
-            //     // 7. Add Ldf instruction (creates function object on stack)
-            //     _ = try self.addInstr(.{ .Ldf = .{ .params = fndecl_data.params, .addr = func_body_addr } });
-            //     // 8. Assign the function object to the name
-            //     _ = try self.addInstr(.{ .Assign = fndecl_data.name });
-            //     // Function declaration itself doesn't leave a value on stack? Add Pop?
-            //     // Let's assume Assign leaves the function value, like other assigns.
-            // },
+            .FnDecl => |fndecl_data| {
+                var fun = AstNode{ .Lambda = .{ .params = fndecl_data.params, .body = fndecl_data.body } };
+                var assign = AstNode{ .Assignment = .{ .name = fndecl_data.name, .value = &fun } };
+                try self.compile(&assign);
+            },
 
-            // .Return => |ret_data| {
-            //     if (ret_data.value) |val_node| {
-            //         // Compile the return value if present
-            //         try self.compile(val_node);
-            //     } else {
-            //         // No return value specified, push Undefined?
-            //         //_ = try self.addInstr(.{ .Ldc = .{ .Undefined = .{} } });
-            //     }
-            //     // Add Reset instruction to return from function
-            //     _ = try self.addInstr(.Reset);
-            // },
+            .Return => |ret_data| {
+                if (ret_data.value) |val_node| {
+                    // Compile the return value if present
+                    try self.compile(val_node);
+                } else {
+                    // No return value specified, push Undefined?
+                    //_ = try self.addInstr(.{ .Ldc = .{ .Undefined = .{} } });
+                }
+                // Add Reset instruction to return from function
+                _ = try self.addInstr(.Reset);
+            },
 
             // .LogicalOp => |log_op_data| {
             //     // Logical operators require short-circuiting via jumps.
