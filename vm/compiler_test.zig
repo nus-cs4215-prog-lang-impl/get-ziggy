@@ -242,17 +242,8 @@ test "compile simple program: let x = 1 + 2; x" {
     // 4: Ld("x")
     // 5: Done
 
-    std.debug.print("Generated Instructions:\n", .{});
-    for (compiler.instructions.items, 0..) |instr, i| {
-        std.debug.print("{d}: ", .{i});
-        switch (instr.data) {
-            .Ld => |name| std.debug.print("Ld(\"{s}\")\n", .{name}),
-            .Assign => |name| std.debug.print("Assign(\"{s}\")\n", .{name}),
-            // NOTE: Add specific formatting for other instructions if needed
-            // e.g., EnterScope, Ldf
-            else => std.debug.print("{any}\n", .{instr.data}),
-        }
-    }
+    try compiler.printCompiledMicrocode();
+
     try testing.expectEqual(@as(usize, 6), instructions.len);
 
     // Check specific instructions
@@ -279,50 +270,62 @@ test "conditional_compile" {
     var compiler = Compiler.init(testing.allocator);
     defer compiler.deinit();
 
-    const condition = AstNode{};
-    const cons = AstNode{};
-    const alt = AstNode{};
-    const program = AstNode{ .Conditional = .{
+    var one = AstNode{ .Literal = .{ .Int = 1 } };
+    var two = AstNode{ .Literal = .{ .Int = 2 } };
+    var add_expr = AstNode{ .BinaryOp = .{ .op = .Add, .left = &one, .right = &two } };
+    var var_decl = AstNode{ .VarDecl = .{ .name = "x", .value = &add_expr } };
+    var load_x = AstNode{ .Name = "x" };
+
+    var statements_slice = [_]*AstNode{
+        &var_decl,
+        &load_x,
+    };
+
+    var condition = AstNode{ .Literal = .{ .Bool = true } };
+    var cons = AstNode{ .Sequence = .{ .statements = &statements_slice } };
+    var alt = AstNode{ .Sequence = .{ .statements = &statements_slice } };
+    var cond_stmt = AstNode{ .Conditional = .{
         .condition = &condition,
         .cons = &cons,
         .alt = &alt,
     } };
+    var statements_slice_2 = [_]*AstNode{
+        &load_x,
+        &cond_stmt,
+        &var_decl,
+    };
+
+    const program = AstNode{ .Sequence = .{ .statements = &statements_slice_2 } };
     // Compile the program
     try compiler.compileProgram(&program);
 
     // Verify the generated instructions
-    const instructions = compiler.instructions.items;
+    try compiler.printCompiledMicrocode();
 
-    std.debug.print("Generated Instructions:\n", .{});
-    for (instructions, 0..) |instr, i| {
-        std.debug.print("{d}: ", .{i});
-        switch (instr.data) {
-            .Ld => |name| std.debug.print("Ld(\"{s}\")\n", .{name}),
-            .Assign => |name| std.debug.print("Assign(\"{s}\")\n", .{name}),
-            .Jof => |name| std.debug.print("Jof(\"{s}\"\n", .{name}),
-            .Goto => |name| std.debug.print("Goto(\"{s}\"\n", .{name}),
-            // NOTE: Add specific formatting for other instructions if needed
-            // e.g., EnterScope, Ldf
-            else => std.debug.print("{any}\n", .{instr.data}),
-        }
-    }
     // Expected instruction sequence:
-    // 0: Ldc(Int=1)
-    // 1: Ldc(Int=2)
-    // 2: Binop(Add)
-    // 3: Assign("x")
-    // 4: Ld("x")
-    // 5: Done
+    // Generated Instructions:
+    // 0: Ld("x")
+    // 1: Pop
+    // 2: Ldc(types.Value{ .Bool = true })
+    // 3: Jof(11)
+    // 4: Ldc(types.Value{ .Int = 1 })
+    // 5: Ldc(types.Value{ .Int = 2 })
+    // 6: Binop(types.BinaryOperator.Add)
+    // 7: Assign("x")
+    // 8: Pop
+    // 9: Ld("x")
+    // 10: Goto(17)
+    // 11: Ldc(types.Value{ .Int = 1 })
+    // 12: Ldc(types.Value{ .Int = 2 })
+    // 13: Binop(types.BinaryOperator.Add)
+    // 14: Assign("x")
+    // 15: Pop
+    // 16: Ld("x")
+    // 17: Pop
+    // 18: Ldc(types.Value{ .Int = 1 })
+    // 19: Ldc(types.Value{ .Int = 2 })
+    // 20: Binop(types.BinaryOperator.Add)
+    // 21: Assign("x")
+    // 22: Done
 
-    std.debug.print("Generated Instructions:\n", .{});
-    for (compiler.instructions.items, 0..) |instr, i| {
-        std.debug.print("{d}: ", .{i});
-        switch (instr.data) {
-            .Ld => |name| std.debug.print("Ld(\"{s}\")\n", .{name}),
-            .Assign => |name| std.debug.print("Assign(\"{s}\")\n", .{name}),
-            // NOTE: Add specific formatting for other instructions if needed
-            // e.g., EnterScope, Ldf
-            else => std.debug.print("{any}\n", .{instr.data}),
-        }
-    }
 }
