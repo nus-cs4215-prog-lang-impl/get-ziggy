@@ -28,10 +28,8 @@ pub const Compiler = struct {
         self.instructions.deinit();
     }
 
-    fn addInstr(self: *Compiler, instruction_data: InstructionData) !usize {
-        const index = self.instructions.items.len;
+    fn addInstr(self: *Compiler, instruction_data: InstructionData) !void {
         try self.instructions.append(.{ .data = instruction_data });
-        return index;
     }
 
     // Helper to get the index of the next instruction to be added
@@ -165,22 +163,27 @@ pub const Compiler = struct {
             .Conditional => |cond_data| {
                 // 1. Compile condition
                 try self.compile(cond_data.condition);
+
                 // 2. Add Jof (Jump if False) instruction, store its index
-                const jof_idx = try self.addInstr(.{ .Jof = 0 }); // Placeholder address 0
+                const jof_idx = self.nextInstrAddr();
+                try self.addInstr(.{ .Jof = 0 }); // Placeholder address 0
                 // 3. Compile 'then' branch (cons)
                 try self.compile(cond_data.cons);
                 // 4. Add Goto instruction (to jump over 'else'), store its index
-                const goto_idx = try self.addInstr(.{ .Goto = 0 }); // Placeholder address 0
+                const goto_idx = self.nextInstrAddr();
+                try self.addInstr(.{ .Goto = 0 }); // Placeholder address 0
+
                 // 5. Get address for start of 'else' branch (alt)
                 const alt_addr = self.nextInstrAddr();
-                // 6. Patch Jof to jump to alt_addr
-                self.patchJump(jof_idx, alt_addr);
-                // 7. Compile 'else' branch (alt)
+                // 6. Compile 'else' branch (alt)
                 try self.compile(cond_data.alt);
-                // 8. Get address after 'else' branch
+                // 7. Get address after 'else' branch
                 const end_addr = self.nextInstrAddr();
-                // 9. Patch Goto to jump to end_addr
+
+                // 8. Patch Goto to jump to end_addr
                 self.patchJump(goto_idx, end_addr);
+                // 9. Patch Jof to jump to alt_addr
+                self.patchJump(jof_idx, alt_addr);
             },
 
             // .Lambda => |lambda_data| {
@@ -355,7 +358,6 @@ pub const Compiler = struct {
                 .TailCall => |tc| std.debug.print("TailCall(arity: {d})\n", .{tc.arity}),
                 .Reset => std.debug.print("Reset\n", .{}),
                 .Done => std.debug.print("Done\n", .{}),
-                else => std.debug.print("Unknown({any})\n", .{instr.data}),
             }
         }
     }
