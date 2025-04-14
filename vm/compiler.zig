@@ -127,10 +127,60 @@ pub const Compiler = struct {
         try self.addInstr(.{ .Assign = name });
     }
 
+    fn compileConditional(self: *Compiler, condition: *const AstNode, cons: *const AstNode, alt: *const AstNode) CompileErrors!void {
+        // 1. Compile condition
+        try self.compile(condition);
+
+        // 2. Add Jof (Jump if False) instruction, store its index
+        const jof_idx = self.nextInstrAddr();
+        try self.addInstr(.{ .Jof = 0 }); // Placeholder address 0
+        // 3. Compile 'then' branch (cons)
+        try self.compile(cons);
+        // 4. Add Goto instruction (to jump over 'else'), store its index
+        const goto_idx = self.nextInstrAddr();
+        try self.addInstr(.{ .Goto = 0 }); // Placeholder address 0
+
+        // 5. Get address for start of 'else' branch (alt)
+        const alt_addr = self.nextInstrAddr();
+        // 6. Compile 'else' branch (alt)
+        try self.compile(alt);
+        // 7. Get address after 'else' branch
+        const end_addr = self.nextInstrAddr();
+
+        // 8. Patch Goto to jump to end_addr
+        self.patchJump(goto_idx, end_addr);
+        // 9. Patch Jof to jump to alt_addr
+        self.patchJump(jof_idx, alt_addr);
+    }
+
     // NOTE: See compileVarDecl on popping the value
     fn compileAssignment(self: *Compiler, name: []const u8, value: *const AstNode) CompileErrors!void {
         try self.compile(value);
         try self.addInstr(.{ .Assign = name });
+    }
+
+    fn compileLambda(self: *Compiler, params: []const Param, body: *const AstNode) CompileErrors!void {
+        // Compiling functions/lambdas requires careful handling of scope and jumps.
+        // Technique: Jump over the body, compile body, then load function object.
+        // 1. Add Goto to jump over the function body, store index
+        const goto_idx = self.nextInstrAddr();
+        try self.addInstr(.{ .Goto = 0 }); // Placeholder
+        // 2. Get the start address of the function body
+        const func_body_addr = self.nextInstrAddr();
+        // 3. Compile the function body
+        //    Need EnterScope for params + body locals, then ExitScope? Or handled by Call/Reset?
+        //    Let's assume Call handles scope setup based on Ldf params.
+        try self.compile(body);
+        // 4. Add Reset instruction at the end of the body to return
+        try self.addInstr(.Reset);
+        // 5. Get address after the function body
+        const after_func_addr = self.nextInstrAddr();
+        // 6. Patch the initial Goto to jump to after_func_addr
+        self.patchJump(goto_idx, after_func_addr);
+        // 7. Add the Ldf instruction *before* the jump (tricky, need to insert or plan ahead)
+        //    Alternative: Add Ldf *now*, pointing to func_body_addr. This is simpler.
+        try self.addInstr(.{ .Ldf = .{ .params = params, .addr = func_body_addr } });
+        // This puts the function object on the stack *after* the jump over its code.
     }
 
     // NOTE: CompileErrors!void is a hack to get around "unable to resolve inferred error set":
@@ -158,53 +208,11 @@ pub const Compiler = struct {
             },
 
             .Conditional => |cond_data| {
-                // 1. Compile condition
-                try self.compile(cond_data.condition);
-
-                // 2. Add Jof (Jump if False) instruction, store its index
-                const jof_idx = self.nextInstrAddr();
-                try self.addInstr(.{ .Jof = 0 }); // Placeholder address 0
-                // 3. Compile 'then' branch (cons)
-                try self.compile(cond_data.cons);
-                // 4. Add Goto instruction (to jump over 'else'), store its index
-                const goto_idx = self.nextInstrAddr();
-                try self.addInstr(.{ .Goto = 0 }); // Placeholder address 0
-
-                // 5. Get address for start of 'else' branch (alt)
-                const alt_addr = self.nextInstrAddr();
-                // 6. Compile 'else' branch (alt)
-                try self.compile(cond_data.alt);
-                // 7. Get address after 'else' branch
-                const end_addr = self.nextInstrAddr();
-
-                // 8. Patch Goto to jump to end_addr
-                self.patchJump(goto_idx, end_addr);
-                // 9. Patch Jof to jump to alt_addr
-                self.patchJump(jof_idx, alt_addr);
+                try self.compileConditional(cond_data.condition, cond_data.cons, cond_data.alt);
             },
 
             .Lambda => |lambda_data| {
-                // Compiling functions/lambdas requires careful handling of scope and jumps.
-                // Technique: Jump over the body, compile body, then load function object.
-                // 1. Add Goto to jump over the function body, store index
-                const goto_idx = self.nextInstrAddr();
-                try self.addInstr(.{ .Goto = 0 }); // Placeholder
-                // 2. Get the start address of the function body
-                const func_body_addr = self.nextInstrAddr();
-                // 3. Compile the function body
-                //    Need EnterScope for params + body locals, then ExitScope? Or handled by Call/Reset?
-                //    Let's assume Call handles scope setup based on Ldf params.
-                try self.compile(lambda_data.body);
-                // 4. Add Reset instruction at the end of the body to return
-                try self.addInstr(.Reset);
-                // 5. Get address after the function body
-                const after_func_addr = self.nextInstrAddr();
-                // 6. Patch the initial Goto to jump to after_func_addr
-                self.patchJump(goto_idx, after_func_addr);
-                // 7. Add the Ldf instruction *before* the jump (tricky, need to insert or plan ahead)
-                //    Alternative: Add Ldf *now*, pointing to func_body_addr. This is simpler.
-                try self.addInstr(.{ .Ldf = .{ .params = lambda_data.params, .addr = func_body_addr } });
-                // This puts the function object on the stack *after* the jump over its code.
+                try self.compileLambda(lambda_data.params, lambda_data.body);
             },
 
             .FnDecl => |fndecl_data| {
@@ -217,12 +225,9 @@ pub const Compiler = struct {
                 if (ret_data.value) |val_node| {
                     // Compile the return value if present
                     try self.compile(val_node);
-                } else {
-                    // No return value specified, push Undefined?
-                    //_ = try self.addInstr(.{ .Ldc = .{ .Undefined = .{} } });
                 }
                 // Add Reset instruction to return from function
-                _ = try self.addInstr(.Reset);
+                try self.addInstr(.Reset);
             },
 
             // .LogicalOp => |log_op_data| {
