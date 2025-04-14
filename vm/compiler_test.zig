@@ -367,3 +367,25 @@ test "while_loop_comp" {
     // Verify the generated instructions
     try compiler.printCompiledMicrocode();
 }
+
+test "fn_decl_test" {
+    // Setup
+    var compiler = Compiler.init(testing.allocator);
+    defer compiler.deinit();
+
+    var body = AstNode{ .Literal = .{ .Int = 2 } };
+    var fn_decl = AstNode{ .FnDecl = .{
+        .name = "foo",
+        .params = &([_]Param{}),
+        .body = &body,
+    } };
+
+    var statements_slice = [_]*AstNode{&fn_decl};
+
+    const program = AstNode{ .Sequence = .{ .statements = &statements_slice } };
+    // Compile the program
+    try compiler.compileProgram(&program);
+
+    // Verify the generated instructions
+    try compiler.printCompiledMicrocode();
+}
