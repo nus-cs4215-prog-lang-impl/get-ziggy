@@ -75,8 +75,9 @@ test "serialize AstNode to JSON" {
         try json.stringify(node, .{}, string.writer());
 
         const result = string.items;
+        std.debug.print("\nSerialized BinaryOp JSON: {s}\n", .{result});
         try testing.expect(std.mem.indexOf(u8, result, "\"BinaryOp\"") != null);
-        try testing.expect(std.mem.indexOf(u8, result, "\"Add\"") != null);
+        try testing.expect(std.mem.indexOf(u8, result, "\"op\":\"+\"") != null); // Expect "+" instead of "Add"
         try testing.expect(std.mem.indexOf(u8, result, "\"left\"") != null);
         try testing.expect(std.mem.indexOf(u8, result, "\"right\"") != null);
         try testing.expect(std.mem.indexOf(u8, result, "10") != null);
@@ -123,7 +124,7 @@ test "parse JSON to AstNode" {
         const json_str =
             \\{
             \\  "BinaryOp": {
-            \\    "op": "Add",
+            \\    "op": "+",
             \\    "left": {"Literal":{"Int":10}},
             \\    "right": {"Literal":{"Int":20}}
             \\  }
@@ -183,6 +184,7 @@ test "round trip AstNode to JSON and back" {
 
     // Verify the structure is preserved
     try testing.expectEqual(AstNode.BinaryOp, std.meta.activeTag(parsed.value));
+    // The parsed value should still be the correct enum member
     try testing.expectEqual(BinaryOperator.Add, parsed.value.BinaryOp.op);
 
     // Check left node (should be a literal with value 10)
