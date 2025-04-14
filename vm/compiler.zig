@@ -28,9 +28,10 @@ pub const Compiler = struct {
         self.instructions.deinit();
     }
 
-    fn addInstr(self: *Compiler, instruction_data: InstructionData) !void {
-        // const index = self.instructions.items.len;
+    fn addInstr(self: *Compiler, instruction_data: InstructionData) !usize {
+        const index = self.instructions.items.len;
         try self.instructions.append(.{ .data = instruction_data });
+        return index;
     }
 
     // Helper to get the index of the next instruction to be added
@@ -77,13 +78,13 @@ pub const Compiler = struct {
     }
 
     // Helper to patch a jump instruction later
-    // fn patchJump(self: *Compiler, instr_index: usize, target_addr: usize) void {
-    //     switch (self.instructions.items[instr_index].data) {
-    //         .Jof => |*addr| addr.* = target_addr,
-    //         .Goto => |*addr| addr.* = target_addr,
-    //         else => @panic("Attempting to patch non-jump instruction"),
-    //     }
-    // }
+    fn patchJump(self: *Compiler, instr_index: usize, target_addr: usize) void {
+        switch (self.instructions.items[instr_index].data) {
+            .Jof => |*addr| addr.* = target_addr,
+            .Goto => |*addr| addr.* = target_addr,
+            else => @panic("Attempting to patch non-jump instruction"),
+        }
+    }
 
     fn compileBinaryOp(self: *Compiler, left: *const AstNode, right: *const AstNode, op: BinaryOperator) CompileErrors!void {
         try self.compile(left);
@@ -161,26 +162,26 @@ pub const Compiler = struct {
             //     _ = try self.addInstr(.{ .Call = .{ .arity = app_data.args.len } });
             // },
 
-            // .Conditional => |cond_data| {
-            //     // 1. Compile condition
-            //     try self.compile(cond_data.condition);
-            //     // 2. Add Jof (Jump if False) instruction, store its index
-            //     const jof_idx = try self.addInstr(.{ .Jof = 0 }); // Placeholder address 0
-            //     // 3. Compile 'then' branch (cons)
-            //     try self.compile(cond_data.cons);
-            //     // 4. Add Goto instruction (to jump over 'else'), store its index
-            //     const goto_idx = try self.addInstr(.{ .Goto = 0 }); // Placeholder address 0
-            //     // 5. Get address for start of 'else' branch (alt)
-            //     const alt_addr = self.nextInstrAddr();
-            //     // 6. Patch Jof to jump to alt_addr
-            //     self.patchJump(jof_idx, alt_addr);
-            //     // 7. Compile 'else' branch (alt)
-            //     try self.compile(cond_data.alt);
-            //     // 8. Get address after 'else' branch
-            //     const end_addr = self.nextInstrAddr();
-            //     // 9. Patch Goto to jump to end_addr
-            //     self.patchJump(goto_idx, end_addr);
-            // },
+            .Conditional => |cond_data| {
+                // 1. Compile condition
+                try self.compile(cond_data.condition);
+                // 2. Add Jof (Jump if False) instruction, store its index
+                const jof_idx = try self.addInstr(.{ .Jof = 0 }); // Placeholder address 0
+                // 3. Compile 'then' branch (cons)
+                try self.compile(cond_data.cons);
+                // 4. Add Goto instruction (to jump over 'else'), store its index
+                const goto_idx = try self.addInstr(.{ .Goto = 0 }); // Placeholder address 0
+                // 5. Get address for start of 'else' branch (alt)
+                const alt_addr = self.nextInstrAddr();
+                // 6. Patch Jof to jump to alt_addr
+                self.patchJump(jof_idx, alt_addr);
+                // 7. Compile 'else' branch (alt)
+                try self.compile(cond_data.alt);
+                // 8. Get address after 'else' branch
+                const end_addr = self.nextInstrAddr();
+                // 9. Patch Goto to jump to end_addr
+                self.patchJump(goto_idx, end_addr);
+            },
 
             // .Lambda => |lambda_data| {
             //     // Compiling functions/lambdas requires careful handling of scope and jumps.
@@ -316,6 +317,47 @@ pub const Compiler = struct {
         // TODO: Could add setup here if needed (e.g., initial EnterScope for globals)
         try self.compile(program_node);
         _ = try self.addInstr(.Done);
+    }
+
+    pub fn printCompiledMicrocode(self: *Compiler) !void {
+        const instructions = self.instructions.items;
+
+        std.debug.print("Generated Instructions:\n", .{});
+        for (instructions, 0..) |instr, i| {
+            std.debug.print("{d}: ", .{i});
+            switch (instr.data) {
+                .Ldc => |val| std.debug.print("Ldc({any})\n", .{val}),
+                .Ld => |name| std.debug.print("Ld(\"{s}\")\n", .{name}),
+                .Assign => |name| std.debug.print("Assign(\"{s}\")\n", .{name}),
+                .Unop => |op| std.debug.print("Unop({any})\n", .{op}),
+                .Binop => |op| std.debug.print("Binop({any})\n", .{op}),
+                .Pop => std.debug.print("Pop\n", .{}),
+                .Jof => |addr| std.debug.print("Jof({d})\n", .{addr}),
+                .Goto => |addr| std.debug.print("Goto({d})\n", .{addr}),
+                .EnterScope => |scope| {
+                    std.debug.print("EnterScope([", .{});
+                    for (scope.locals, 0..) |local, j| {
+                        if (j > 0) std.debug.print(", ", .{});
+                        std.debug.print("\"{s}\"", .{local});
+                    }
+                    std.debug.print("])\n", .{});
+                },
+                .ExitScope => std.debug.print("ExitScope\n", .{}),
+                .Ldf => |f| {
+                    std.debug.print("Ldf(params: [", .{});
+                    for (f.params, 0..) |param, j| {
+                        if (j > 0) std.debug.print(", ", .{});
+                        std.debug.print("{any}", .{param});
+                    }
+                    std.debug.print("], addr: {d})\n", .{f.addr});
+                },
+                .Call => |c| std.debug.print("Call(arity: {d})\n", .{c.arity}),
+                .TailCall => |tc| std.debug.print("TailCall(arity: {d})\n", .{tc.arity}),
+                .Reset => std.debug.print("Reset\n", .{}),
+                .Done => std.debug.print("Done\n", .{}),
+                else => std.debug.print("Unknown({any})\n", .{instr.data}),
+            }
+        }
     }
 };
 

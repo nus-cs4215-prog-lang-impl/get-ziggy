@@ -273,3 +273,56 @@ test "compile simple program: let x = 1 + 2; x" {
 
     try testing.expectEqual(InstructionData.Done, instructions[5].data);
 }
+
+test "conditional_compile" {
+    // Setup
+    var compiler = Compiler.init(testing.allocator);
+    defer compiler.deinit();
+
+    const condition = AstNode{};
+    const cons = AstNode{};
+    const alt = AstNode{};
+    const program = AstNode{ .Conditional = .{
+        .condition = &condition,
+        .cons = &cons,
+        .alt = &alt,
+    } };
+    // Compile the program
+    try compiler.compileProgram(&program);
+
+    // Verify the generated instructions
+    const instructions = compiler.instructions.items;
+
+    std.debug.print("Generated Instructions:\n", .{});
+    for (instructions, 0..) |instr, i| {
+        std.debug.print("{d}: ", .{i});
+        switch (instr.data) {
+            .Ld => |name| std.debug.print("Ld(\"{s}\")\n", .{name}),
+            .Assign => |name| std.debug.print("Assign(\"{s}\")\n", .{name}),
+            .Jof => |name| std.debug.print("Jof(\"{s}\"\n", .{name}),
+            .Goto => |name| std.debug.print("Goto(\"{s}\"\n", .{name}),
+            // NOTE: Add specific formatting for other instructions if needed
+            // e.g., EnterScope, Ldf
+            else => std.debug.print("{any}\n", .{instr.data}),
+        }
+    }
+    // Expected instruction sequence:
+    // 0: Ldc(Int=1)
+    // 1: Ldc(Int=2)
+    // 2: Binop(Add)
+    // 3: Assign("x")
+    // 4: Ld("x")
+    // 5: Done
+
+    std.debug.print("Generated Instructions:\n", .{});
+    for (compiler.instructions.items, 0..) |instr, i| {
+        std.debug.print("{d}: ", .{i});
+        switch (instr.data) {
+            .Ld => |name| std.debug.print("Ld(\"{s}\")\n", .{name}),
+            .Assign => |name| std.debug.print("Assign(\"{s}\")\n", .{name}),
+            // NOTE: Add specific formatting for other instructions if needed
+            // e.g., EnterScope, Ldf
+            else => std.debug.print("{any}\n", .{instr.data}),
+        }
+    }
+}
