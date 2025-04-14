@@ -1,192 +1,240 @@
 {
-  "tag": "blk",
-  "body": {
-    "tag": "seq",
-    "stmts": [
-      {
-        "tag": "fun",
-        "nam": "main",
-        "params": [],
-        "body": {
-          "tag": "blk",
-          "body": {
-            "tag": "seq",
-            "stmts": [
-              {
-                "tag": "assign",
-                "is_mut": true,
-                "nam": "a",
-                "val": {
-                  "tag": "lit",
-                  "val": "0"
-                }
-              },
-              {
-                "tag": "while",
-                "pred": {
-                  "tag": "comp",
-                  "sym": "<",
-                  "first": {
-                    "tag": "nam",
-                    "val": "a"
-                  },
-                  "second": {
-                    "tag": "lit",
-                    "val": "10"
-                  }
-                },
-                "body": {
-                  "tag": "blk",
+  "blk": {
+    "body": {
+      "seq": {
+        "stmts": [
+          {
+            "fun": {
+              "nam": "main",
+              "params": [],
+              "body": {
+                "blk": {
                   "body": {
-                    "tag": "seq",
-                    "stmts": [
-                      {
-                        "tag": "cond",
-                        "pred": {
-                          "tag": "comp",
-                          "sym": "==",
-                          "first": {
-                            "tag": "arith",
-                            "sym": "%",
+                    "seq": {
+                      "stmts": [
+                        {
+                          "assign": {
+                            "is_mut": true,
+                            "nam": "a",
+                            "val": {
+                              "lit": {
+                                "val": "0"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "while": {
+                            "pred": {
+                              "comp": {
+                                "sym": "<",
+                                "first": {
+                                  "nam": {
+                                    "val": "a"
+                                  }
+                                },
+                                "second": {
+                                  "lit": {
+                                    "val": "10"
+                                  }
+                                }
+                              }
+                            },
+                            "body": {
+                              "blk": {
+                                "body": {
+                                  "seq": {
+                                    "stmts": [
+                                      {
+                                        "cond": {
+                                          "pred": {
+                                            "comp": {
+                                              "sym": "==",
+                                              "first": {
+                                                "arith": {
+                                                  "sym": "%",
+                                                  "first": {
+                                                    "nam": {
+                                                      "val": "a"
+                                                    }
+                                                  },
+                                                  "second": {
+                                                    "lit": {
+                                                      "val": "2"
+                                                    }
+                                                  }
+                                                }
+                                              },
+                                              "second": {
+                                                "lit": {
+                                                  "val": "1"
+                                                }
+                                              }
+                                            }
+                                          },
+                                          "cons": {
+                                            "blk": {
+                                              "body": {
+                                                "seq": {
+                                                  "stmts": [
+                                                    {
+                                                      "break": {
+                                                        "body": null
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              }
+                                            }
+                                          },
+                                          "alt": null
+                                        }
+                                      },
+                                      {
+                                        "compound_assign": {
+                                          "sym": "+=",
+                                          "first": {
+                                            "nam": {
+                                              "val": "a"
+                                            }
+                                          },
+                                          "second": {
+                                            "lit": {
+                                              "val": "1"
+                                            }
+                                          }
+                                        }
+                                      }
+                                    ]
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "assign": {
+                            "sym": "=",
                             "first": {
-                              "tag": "nam",
-                              "val": "a"
+                              "nam": {
+                                "val": "a"
+                              }
                             },
                             "second": {
-                              "tag": "lit",
-                              "val": "2"
-                            }
-                          },
-                          "second": {
-                            "tag": "lit",
-                            "val": "1"
-                          }
-                        },
-                        "cons": {
-                          "tag": "blk",
-                          "body": {
-                            "tag": "seq",
-                            "stmts": [
-                              {
-                                "tag": "break",
-                                "body": null
+                              "lit": {
+                                "val": "0"
                               }
-                            ]
+                            }
                           }
                         },
-                        "alt": null
-                      },
-                      {
-                        "tag": "compound_assign",
-                        "sym": "+=",
-                        "first": {
-                          "tag": "nam",
-                          "val": "a"
-                        },
-                        "second": {
-                          "tag": "lit",
-                          "val": "1"
-                        }
-                      }
-                    ]
-                  }
-                }
-              },
-              {
-                "tag": "assign",
-                "sym": "=",
-                "first": {
-                  "tag": "nam",
-                  "val": "a"
-                },
-                "second": {
-                  "tag": "lit",
-                  "val": "0"
-                }
-              },
-              {
-                "tag": "while",
-                "pred": {
-                  "tag": "comp",
-                  "sym": "<",
-                  "first": {
-                    "tag": "nam",
-                    "val": "a"
-                  },
-                  "second": {
-                    "tag": "lit",
-                    "val": "10"
-                  }
-                },
-                "body": {
-                  "tag": "blk",
-                  "body": {
-                    "tag": "seq",
-                    "stmts": [
-                      {
-                        "tag": "cond",
-                        "pred": {
-                          "tag": "comp",
-                          "sym": "==",
-                          "first": {
-                            "tag": "arith",
-                            "sym": "%",
-                            "first": {
-                              "tag": "nam",
-                              "val": "a"
+                        {
+                          "while": {
+                            "pred": {
+                              "comp": {
+                                "sym": "<",
+                                "first": {
+                                  "nam": {
+                                    "val": "a"
+                                  }
+                                },
+                                "second": {
+                                  "lit": {
+                                    "val": "10"
+                                  }
+                                }
+                              }
                             },
-                            "second": {
-                              "tag": "lit",
-                              "val": "2"
-                            }
-                          },
-                          "second": {
-                            "tag": "lit",
-                            "val": "1"
-                          }
-                        },
-                        "cons": {
-                          "tag": "blk",
-                          "body": {
-                            "tag": "seq",
-                            "stmts": [
-                              {
-                                "tag": "continue",
-                                "body": null
+                            "body": {
+                              "blk": {
+                                "body": {
+                                  "seq": {
+                                    "stmts": [
+                                      {
+                                        "cond": {
+                                          "pred": {
+                                            "comp": {
+                                              "sym": "==",
+                                              "first": {
+                                                "arith": {
+                                                  "sym": "%",
+                                                  "first": {
+                                                    "nam": {
+                                                      "val": "a"
+                                                    }
+                                                  },
+                                                  "second": {
+                                                    "lit": {
+                                                      "val": "2"
+                                                    }
+                                                  }
+                                                }
+                                              },
+                                              "second": {
+                                                "lit": {
+                                                  "val": "1"
+                                                }
+                                              }
+                                            }
+                                          },
+                                          "cons": {
+                                            "blk": {
+                                              "body": {
+                                                "seq": {
+                                                  "stmts": [
+                                                    {
+                                                      "continue": {
+                                                        "body": null
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              }
+                                            }
+                                          },
+                                          "alt": null
+                                        }
+                                      },
+                                      {
+                                        "compound_assign": {
+                                          "sym": "+=",
+                                          "first": {
+                                            "nam": {
+                                              "val": "a"
+                                            }
+                                          },
+                                          "second": {
+                                            "lit": {
+                                              "val": "1"
+                                            }
+                                          }
+                                        }
+                                      }
+                                    ]
+                                  }
+                                }
                               }
-                            ]
+                            }
                           }
                         },
-                        "alt": null
-                      },
-                      {
-                        "tag": "compound_assign",
-                        "sym": "+=",
-                        "first": {
-                          "tag": "nam",
-                          "val": "a"
-                        },
-                        "second": {
-                          "tag": "lit",
-                          "val": "1"
+                        {
+                          "return": {
+                            "body": {
+                              "nam": {
+                                "val": "a"
+                              }
+                            }
+                          }
                         }
-                      }
-                    ]
+                      ]
+                    }
                   }
-                }
-              },
-              {
-                "tag": "return",
-                "body": {
-                  "tag": "nam",
-                  "val": "a"
                 }
               }
-            ]
-          }
-        }
-      },
-      ""
-    ]
+            }
+          },
+          ""
+        ]
+      }
+    }
   }
 }

@@ -1,34 +1,42 @@
 {
-  "tag": "blk",
-  "body": {
-    "tag": "seq",
-    "stmts": [
-      {
-        "tag": "fun",
-        "nam": "main",
-        "params": [],
-        "body": {
-          "tag": "blk",
-          "body": {
-            "tag": "seq",
-            "stmts": [
-              {
-                "tag": "blk",
-                "body": {
-                  "tag": "seq",
-                  "stmts": [
-                    {
-                      "tag": "lit",
-                      "val": "\"HI\""
+  "blk": {
+    "body": {
+      "seq": {
+        "stmts": [
+          {
+            "fun": {
+              "nam": "main",
+              "params": [],
+              "body": {
+                "blk": {
+                  "body": {
+                    "seq": {
+                      "stmts": [
+                        {
+                          "blk": {
+                            "body": {
+                              "seq": {
+                                "stmts": [
+                                  {
+                                    "lit": {
+                                      "val": "\"HI\""
+                                    }
+                                  }
+                                ]
+                              }
+                            }
+                          }
+                        }
+                      ]
                     }
-                  ]
+                  }
                 }
               }
-            ]
-          }
-        }
-      },
-      ""
-    ]
+            }
+          },
+          ""
+        ]
+      }
+    }
   }
 }

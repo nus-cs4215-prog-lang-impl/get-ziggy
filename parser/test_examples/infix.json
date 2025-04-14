@@ -1,122 +1,152 @@
 {
-  "tag": "blk",
-  "body": {
-    "tag": "seq",
-    "stmts": [
-      {
-        "tag": "fun",
-        "nam": "main",
-        "params": [],
-        "body": {
-          "tag": "blk",
-          "body": {
-            "tag": "seq",
-            "stmts": [
-              {
-                "tag": "arith",
-                "sym": "+",
-                "first": {
-                  "tag": "lit",
-                  "val": "1"
-                },
-                "second": {
-                  "tag": "lit",
-                  "val": "2"
-                }
-              },
-              {
-                "tag": "comp",
-                "sym": "==",
-                "first": {
-                  "tag": "lit",
-                  "val": "true"
-                },
-                "second": {
-                  "tag": "lit",
-                  "val": "false"
-                }
-              },
-              {
-                "tag": "comp",
-                "sym": ">",
-                "first": {
-                  "tag": "lit",
-                  "val": "3"
-                },
-                "second": {
-                  "tag": "lit",
-                  "val": "2"
-                }
-              },
-              {
-                "tag": "comp",
-                "sym": "==",
-                "first": {
-                  "tag": "arith",
-                  "sym": "+",
-                  "first": {
-                    "tag": "lit",
-                    "val": "1"
-                  },
-                  "second": {
-                    "tag": "lit",
-                    "val": "2"
-                  }
-                },
-                "second": {
-                  "tag": "arith",
-                  "sym": "*",
-                  "first": {
-                    "tag": "lit",
-                    "val": "3"
-                  },
-                  "second": {
-                    "tag": "lit",
-                    "val": "12"
-                  }
-                }
-              },
-              {
-                "tag": "logic",
-                "sym": "&&",
-                "first": {
-                  "tag": "comp",
-                  "sym": ">",
-                  "first": {
-                    "tag": "lit",
-                    "val": "3"
-                  },
-                  "second": {
-                    "tag": "lit",
-                    "val": "2"
-                  }
-                },
-                "second": {
-                  "tag": "comp",
-                  "sym": "<",
-                  "first": {
-                    "tag": "arith",
-                    "sym": "+",
-                    "first": {
-                      "tag": "lit",
-                      "val": "1"
-                    },
-                    "second": {
-                      "tag": "lit",
-                      "val": "2"
+  "blk": {
+    "body": {
+      "seq": {
+        "stmts": [
+          {
+            "fun": {
+              "nam": "main",
+              "params": [],
+              "body": {
+                "blk": {
+                  "body": {
+                    "seq": {
+                      "stmts": [
+                        {
+                          "arith": {
+                            "sym": "+",
+                            "first": {
+                              "lit": {
+                                "val": "1"
+                              }
+                            },
+                            "second": {
+                              "lit": {
+                                "val": "2"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "comp": {
+                            "sym": "==",
+                            "first": {
+                              "lit": {
+                                "val": "true"
+                              }
+                            },
+                            "second": {
+                              "lit": {
+                                "val": "false"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "comp": {
+                            "sym": ">",
+                            "first": {
+                              "lit": {
+                                "val": "3"
+                              }
+                            },
+                            "second": {
+                              "lit": {
+                                "val": "2"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "comp": {
+                            "sym": "==",
+                            "first": {
+                              "arith": {
+                                "sym": "+",
+                                "first": {
+                                  "lit": {
+                                    "val": "1"
+                                  }
+                                },
+                                "second": {
+                                  "lit": {
+                                    "val": "2"
+                                  }
+                                }
+                              }
+                            },
+                            "second": {
+                              "arith": {
+                                "sym": "*",
+                                "first": {
+                                  "lit": {
+                                    "val": "3"
+                                  }
+                                },
+                                "second": {
+                                  "lit": {
+                                    "val": "12"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "logic": {
+                            "sym": "&&",
+                            "first": {
+                              "comp": {
+                                "sym": ">",
+                                "first": {
+                                  "lit": {
+                                    "val": "3"
+                                  }
+                                },
+                                "second": {
+                                  "lit": {
+                                    "val": "2"
+                                  }
+                                }
+                              }
+                            },
+                            "second": {
+                              "comp": {
+                                "sym": "<",
+                                "first": {
+                                  "arith": {
+                                    "sym": "+",
+                                    "first": {
+                                      "lit": {
+                                        "val": "1"
+                                      }
+                                    },
+                                    "second": {
+                                      "lit": {
+                                        "val": "2"
+                                      }
+                                    }
+                                  }
+                                },
+                                "second": {
+                                  "lit": {
+                                    "val": "1"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      ]
                     }
-                  },
-                  "second": {
-                    "tag": "lit",
-                    "val": "1"
                   }
                 }
               }
-            ]
-          }
-        }
-      },
-      ""
-    ]
+            }
+          },
+          ""
+        ]
+      }
+    }
   }
 }
