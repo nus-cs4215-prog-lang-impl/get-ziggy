@@ -167,12 +167,15 @@ def trim_expr(node, rule_names):
             0
         ).getSymbol().text in ["return", "break", "continue"]:
             return {
-                "tag": node.getChild(0).getSymbol().text,
-                "body": (
-                    None
-                    if node.getChildCount() != 2
-                    else trim_expr(node.getChild(1), rule_names)
-                ),
+                node.getChild(0)
+                .getSymbol()
+                .text: {
+                    "body": (
+                        None
+                        if node.getChildCount() != 2
+                        else trim_expr(node.getChild(1), rule_names)
+                    ),
+                }
             }
         elif (
             node.getChildCount() >= 3
@@ -182,9 +185,10 @@ def trim_expr(node, rule_names):
         ):
             fn_name = trim_expr(node.getChild(0), rule_names)
             return {
-                "tag": "app",
-                "nam": fn_name,
-                "args": get_call_params(node.getChild(2), rule_names),
+                "app": {
+                    "nam": fn_name,
+                    "args": get_call_params(node.getChild(2), rule_names),
+                }
             }
         elif node.getChildCount() == 2 or (
             isinstance(node.getChild(0), TerminalNode)
@@ -192,9 +196,10 @@ def trim_expr(node, rule_names):
         ):
             op, op_type, lhs = expr_pre_post_operator(node)
             return {
-                "tag": op_type,
-                "sym": op,
-                "first": trim_expr(lhs, rule_names),
+                op_type: {
+                    "sym": op,
+                    "first": trim_expr(lhs, rule_names),
+                }
             }
 
         elif node.getChildCount() == 3:
@@ -209,10 +214,11 @@ def trim_expr(node, rule_names):
                 # NOTE: Check footnote on precendence
                 op, op_type, lhs, rhs = expr_infix_operator(node)
                 return {
-                    "tag": op_type,
-                    "sym": op,
-                    "first": trim_expr(lhs, rule_names),
-                    "second": trim_expr(rhs, rule_names),
+                    op_type: {
+                        "sym": op,
+                        "first": trim_expr(lhs, rule_names),
+                        "second": trim_expr(rhs, rule_names),
+                    }
                 }
 
         else:
@@ -222,17 +228,18 @@ def trim_expr(node, rule_names):
         path = node.getChild(0)
         assert path.getChildCount() == 1, "Assertion: Var name path must be of len 1"
         return {
-            "tag": "nam",
-            "val": path.getChild(0)
-            .getChild(0)
-            .getChild(0)
-            .getChild(0)
-            .getSymbol()
-            .text,
+            "nam": {
+                "val": path.getChild(0)
+                .getChild(0)
+                .getChild(0)
+                .getChild(0)
+                .getSymbol()
+                .text,
+            }
         }
 
     elif rule_name == "literalExpression":
-        return {"tag": "lit", "val": node.getChild(0).getSymbol().text}
+        return {"lit": {"val": node.getChild(0).getSymbol().text}}
 
     elif rule_name == "expressionWithBlock":
         # WARN: Circular recursion, BE CAREFUL!
@@ -247,21 +254,23 @@ def trim_expr(node, rule_names):
         ), "Assertion: :ifExpression can have only 3 of 5 children"
 
         return {
-            "tag": "cond",
-            "pred": trim_expr(node.getChild(1), rule_names),
-            "cons": trim_tree(node.getChild(2), rule_names),
-            "alt": (
-                trim_tree(node.getChild(4), rule_names)
-                if node.getChildCount() == 5
-                else None
-            ),
+            "cond": {
+                "pred": trim_expr(node.getChild(1), rule_names),
+                "cons": trim_tree(node.getChild(2), rule_names),
+                "alt": (
+                    trim_tree(node.getChild(4), rule_names)
+                    if node.getChildCount() == 5
+                    else None
+                ),
+            }
         }
     elif rule_name == "loopExpression":
         loop = node.getChild(0)
         return {
-            "tag": "while",
-            "pred": trim_expr(loop.getChild(1), rule_names),
-            "body": trim_tree(loop.getChild(2), rule_names),
+            "while": {
+                "pred": trim_expr(loop.getChild(1), rule_names),
+                "body": trim_tree(loop.getChild(2), rule_names),
+            }
         }
     else:
         raise NotImplementedError(
@@ -281,8 +290,6 @@ def trim_tree(node, rule_names):
         token = node.getSymbol()
         raise AttributeError(f"don't want literals:::::{token.text}::::")
         return {
-            "tag": "lit",
-            "text": token.text,
             "token_type": RustLexer.symbolicNames[token.type],  # Token name
         }
 
@@ -301,16 +308,17 @@ def trim_tree(node, rule_names):
                 params = get_fn_params(para_node, rule_names)
                 body = trim_tree(node.getChild(6), rule_names)
 
-            return {"tag": "fun", "nam": fun_name, "params": params, "body": body}
+            return {"fun": {"nam": fun_name, "params": params, "body": body}}
         elif rule_name == "blockExpression":
-            return {"tag": "blk", "body": trim_tree(node.getChild(1), rule_names)}
+            return {"blk": {"body": trim_tree(node.getChild(1), rule_names)}}
         elif rule_name == "statements":
             return {
-                "tag": "seq",
-                "stmts": [
-                    trim_tree(node.getChild(i), rule_names)
-                    for i in range(node.getChildCount())
-                ],
+                "seq": {
+                    "stmts": [
+                        trim_tree(node.getChild(i), rule_names)
+                        for i in range(node.getChildCount())
+                    ],
+                }
             }
         elif rule_name == "statement":
             assert node.getChildCount() == 1, "Assertion: Statement has 1 child"
@@ -336,10 +344,11 @@ def trim_tree(node, rule_names):
 
             rhs_node = trim_tree(node.getChild(3), rule_names)
             return {
-                "tag": "assign",
-                "is_mut": is_mut,
-                "nam": nam,
-                "val": rhs_node,
+                "assign": {
+                    "is_mut": is_mut,
+                    "nam": nam,
+                    "val": rhs_node,
+                }
             }
         elif rule_name == "macroInvocationSemi":
             raise NotImplementedError("Won't implement or macro statements")
@@ -352,14 +361,16 @@ def trim_tree(node, rule_names):
 
         elif rule_name == "crate":
             return {
-                "tag": "blk",
-                "body": {
-                    "tag": "seq",
-                    "stmts": [
-                        trim_tree(node.getChild(i), rule_names)
-                        for i in range(node.getChildCount())
-                    ],
-                },
+                "blk": {
+                    "body": {
+                        "seq": {
+                            "stmts": [
+                                trim_tree(node.getChild(i), rule_names)
+                                for i in range(node.getChildCount())
+                            ],
+                        }
+                    },
+                }
             }
         else:
             raise NotImplementedError(f"Rule name {rule_name} not implemented in parse")
