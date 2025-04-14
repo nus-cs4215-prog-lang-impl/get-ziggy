@@ -27,8 +27,8 @@ pub const Compiler = struct {
         self.instructions.deinit();
     }
 
-    fn addInstr(self: *Compiler, instruction_data: InstructionData) !void {
-        try self.instructions.append(.{ .data = instruction_data });
+    fn addInstr(self: *Compiler, instruction: Instruction) !void {
+        try self.instructions.append(instruction);
     }
 
     // Helper to get the index of the next instruction to be added
@@ -76,7 +76,7 @@ pub const Compiler = struct {
 
     // Helper to patch a jump instruction later
     fn patchJump(self: *Compiler, instr_index: usize, target_addr: usize) void {
-        switch (self.instructions.items[instr_index].data) {
+        switch (self.instructions.items[instr_index]) {
             .Jof => |*addr| addr.* = target_addr,
             .Goto => |*addr| addr.* = target_addr,
             else => @panic("Attempting to patch non-jump instruction"),
