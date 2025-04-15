@@ -242,8 +242,21 @@ def trim_expr(node, rule_names):
         }
 
     elif rule_name == "literalExpression":
-        print(node.getChild(0).getSymbol())
-        return {"lit": {"val": node.getChild(0).getSymbol().text}}
+        val = node.getChild(0).getSymbol().text
+        type_name = None
+        if val[0] == '"':
+            type_name = "string"
+        elif "_" in val:
+            two = val.split("_")
+            assert len(two) == 2, "Assertion: literaly typed needs to have only one underscore"
+            val = two[0]
+            type_name = two[1]
+        elif "." in val:
+            type_name = "f64"
+        elif val.isdigit():
+            type_name = "i32"
+
+        return {"lit": {"val": val, "type_name": type_name}}
 
     elif rule_name == "expressionWithBlock":
         # WARN: Circular recursion, BE CAREFUL!
