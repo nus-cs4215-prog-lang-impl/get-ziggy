@@ -297,6 +297,23 @@ pub const CompoundAssignOperator = enum {
     }
 };
 
+pub const TypeCastOperator = enum {
+    As, // as
+
+    pub fn jsonStringify(self: TypeCastOperator, writer: anytype) !void {
+        try writer.write(switch (self) {
+            .As => "as",
+        });
+    }
+
+    pub fn jsonParse(allocator: std.mem.Allocator, value: *json.Scanner, options: json.ParseOptions) !TypeCastOperator {
+        const val = try json.innerParse(json.Value, allocator, value, options);
+        const str = val.string;
+        if (std.mem.eql(u8, str, "as")) return .As;
+        return error.InvalidEnumTag;
+    }
+};
+
 pub const LogicalOperator = enum {
     And, // &&
     Or, // ||
@@ -324,6 +341,7 @@ pub const BinaryOperator = union(enum) {
     arith: ArithOperator,
     reassign: AssignOperator,
     compound_assign: CompoundAssignOperator,
+    type_cast: TypeCastOperator,
 
     pub fn jsonStringify(self: BinaryOperator, writer: anytype) !void {
         switch (self) {
@@ -332,6 +350,7 @@ pub const BinaryOperator = union(enum) {
             .arith => |arith_op| try arith_op.jsonStringify(writer),
             .reassign => |assign_op| try assign_op.jsonStringify(writer),
             .compound_assign => |compound_assign_op| try compound_assign_op.jsonStringify(writer),
+            .type_cast => |type_cast_op| try type_cast_op.jsonStringify(writer),
         }
     }
 
@@ -379,6 +398,9 @@ pub const BinaryOperator = union(enum) {
         if (std.mem.eql(u8, str, "<<=")) return BinaryOperator{ .compound_assign = .ShlAssign };
         if (std.mem.eql(u8, str, ">>=")) return BinaryOperator{ .compound_assign = .ShrAssign };
 
+        // Try to parse as TypeCastOperator
+        if (std.mem.eql(u8, str, "as")) return BinaryOperator{ .type_cast = .As };
+
         return error.InvalidEnumTag;
     }
 };
@@ -422,7 +444,7 @@ pub const AstNode = union(enum) {
 pub const JsonAstNode = union(enum) {
     lit: struct { val: Value },
     nam: []const u8,
-    app: struct { nam: []const u8, args: []*JsonAstNode }, // NOTE: This differs from initial, becuase we aren't using AstNode for func
+    app: struct { nam: []const u8, args: []*JsonAstNode },
     logic: BinaryOperation,
     arith: BinaryOperation,
     borrow: UnaryOperation,
@@ -440,8 +462,6 @@ pub const JsonAstNode = union(enum) {
     fun: struct { nam: []const u8, params: []Param, body: *JsonAstNode },
     while_loop: struct { pred: *JsonAstNode, body: *JsonAstNode },
     return_statement: struct { body: *JsonAstNode },
-    // TODO: return: struct { value: ?*JsonAstNode },
-    // Other op types: borrow, deref, question, type_cast, compoud_assign
 };
 
 pub const Instruction = union(enum) {
