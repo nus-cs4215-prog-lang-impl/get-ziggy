@@ -24,7 +24,7 @@ pub const BorrowOperator = enum {
         });
     }
 
-    pub fn jsonParse(allocator: std.mem.Allocator, value: *json.Scanner, options: json.ParseOptions) !BorrowOperator {
+    pub fn jsonParse(allocator: std.mem.Allocator, value: *json.Scanner, options: json.ParseOptions) !BorrowAttr {
         const val = try json.innerParse(json.Value, allocator, value, options);
         const str = val.string;
         // std.debug.print("val: {}\n", .{val});
@@ -32,12 +32,12 @@ pub const BorrowOperator = enum {
         if (std.mem.eql(u8, str, "&&")) return .BorrowRef;
         return error.InvalidEnumTag;
     }
-}
+};
 
 pub const BorrowAttr = enum {
     BorrowAttr, //mut
 
-    pub fn jsonStringify(self: BorrowOperator, writer: anytype) !void {
+    pub fn jsonStringify(self: BorrowAttr, writer: anytype) !void {
         try writer.write(switch (self) {
             .BorrowAttr => "mut",
         });
@@ -50,8 +50,7 @@ pub const BorrowAttr = enum {
         if (std.mem.eql(u8, str, "mut")) return .BorrowAttr;
         return error.InvalidEnumTag;
     }
-}
-
+};
 
 pub const NegateOperator = enum {
     Negate, // -
@@ -90,14 +89,14 @@ pub const DerefOperator = enum {
         if (std.mem.eql(u8, str, "*")) return .Deref;
         return error.InvalidEnumTag;
     }
-}
+};
 
 pub const QuestionOperator = enum {
     Question, // ?
 
     pub fn jsonStringify(self: QuestionOperator, writer: anytype) !void {
         try writer.write(switch (self) {
-            .Deref => "?",
+            .Question => "?",
         });
     }
 
@@ -105,11 +104,10 @@ pub const QuestionOperator = enum {
         const val = try json.innerParse(json.Value, allocator, value, options);
         const str = val.string;
         // std.debug.print("val: {}\n", .{val});
-        if (std.mem.eql(u8, str, "?")) return .Deref;
+        if (std.mem.eql(u8, str, "?")) return .Question;
         return error.InvalidEnumTag;
     }
-
-}
+};
 
 pub const UnaryOperator = union(enum) {
     borrow: BorrowOperator,
@@ -153,7 +151,7 @@ pub const UnaryOperator = union(enum) {
         // If none match, return an error
         return error.InvalidEnumTag;
     }
-}
+};
 
 pub const UnaryOperation = struct {
     sym: UnaryOperator,
@@ -238,6 +236,67 @@ pub const ArithOperator = enum {
     }
 };
 
+pub const AssignOperator = enum {
+    Assign, // =
+
+    pub fn jsonStringify(self: AssignOperator, writer: anytype) !void {
+        try writer.write(switch (self) {
+            .Assign => "=",
+        });
+    }
+
+    pub fn jsonParse(allocator: std.mem.Allocator, value: *json.Scanner, options: json.ParseOptions) !AssignOperator {
+        const val = try json.innerParse(json.Value, allocator, value, options);
+        const str = val.string;
+        if (std.mem.eql(u8, str, "=")) return .Assign;
+        return error.InvalidEnumTag;
+    }
+};
+
+pub const CompoundAssignOperator = enum {
+    AddAssign, // +=
+    SubAssign, // -=
+    MulAssign, // *=
+    DivAssign, // /=
+    ModAssign, // %=
+    BitAndAssign, // &=
+    BitOrAssign, // |=
+    BitXorAssign, // ^=
+    ShlAssign, // <<=
+    ShrAssign, // >>=
+
+    pub fn jsonStringify(self: CompoundAssignOperator, writer: anytype) !void {
+        try writer.write(switch (self) {
+            .AddAssign => "+=",
+            .SubAssign => "-=",
+            .MulAssign => "*=",
+            .DivAssign => "/=",
+            .ModAssign => "%=",
+            .BitAndAssign => "&=",
+            .BitOrAssign => "|=",
+            .BitXorAssign => "^=",
+            .ShlAssign => "<<=",
+            .ShrAssign => ">>=",
+        });
+    }
+
+    pub fn jsonParse(allocator: std.mem.Allocator, value: *json.Scanner, options: json.ParseOptions) !CompoundAssignOperator {
+        const val = try json.innerParse(json.Value, allocator, value, options);
+        const str = val.string;
+        if (std.mem.eql(u8, str, "+=")) return .AddAssign;
+        if (std.mem.eql(u8, str, "-=")) return .SubAssign;
+        if (std.mem.eql(u8, str, "*=")) return .MulAssign;
+        if (std.mem.eql(u8, str, "/=")) return .DivAssign;
+        if (std.mem.eql(u8, str, "%=")) return .ModAssign;
+        if (std.mem.eql(u8, str, "&=")) return .BitAndAssign;
+        if (std.mem.eql(u8, str, "|=")) return .BitOrAssign;
+        if (std.mem.eql(u8, str, "^=")) return .BitXorAssign;
+        if (std.mem.eql(u8, str, "<<=")) return .ShlAssign;
+        if (std.mem.eql(u8, str, ">>=")) return .ShrAssign;
+        return error.InvalidEnumTag;
+    }
+};
+
 pub const LogicalOperator = enum {
     And, // &&
     Or, // ||
@@ -263,12 +322,16 @@ pub const BinaryOperator = union(enum) {
     comp: CompOperator,
     logic: LogicalOperator,
     arith: ArithOperator,
+    reassign: AssignOperator,
+    compound_assign: CompoundAssignOperator,
 
     pub fn jsonStringify(self: BinaryOperator, writer: anytype) !void {
         switch (self) {
             .comp => |comp_op| try comp_op.jsonStringify(writer),
             .logic => |logic_op| try logic_op.jsonStringify(writer),
             .arith => |arith_op| try arith_op.jsonStringify(writer),
+            .reassign => |assign_op| try assign_op.jsonStringify(writer),
+            .compound_assign => |compound_assign_op| try compound_assign_op.jsonStringify(writer),
         }
     }
 
@@ -300,6 +363,21 @@ pub const BinaryOperator = union(enum) {
         if (std.mem.eql(u8, str, "&")) return BinaryOperator{ .arith = .Bitand };
         if (std.mem.eql(u8, str, "<<")) return BinaryOperator{ .arith = .Shl };
         if (std.mem.eql(u8, str, ">>")) return BinaryOperator{ .arith = .Shr };
+
+        // Try to parse as AssignOperator
+        if (std.mem.eql(u8, str, "=")) return BinaryOperator{ .reassign = .Assign };
+
+        // Try to parse as CompoundAssignOperator
+        if (std.mem.eql(u8, str, "+=")) return BinaryOperator{ .compound_assign = .AddAssign };
+        if (std.mem.eql(u8, str, "-=")) return BinaryOperator{ .compound_assign = .SubAssign };
+        if (std.mem.eql(u8, str, "*=")) return BinaryOperator{ .compound_assign = .MulAssign };
+        if (std.mem.eql(u8, str, "/=")) return BinaryOperator{ .compound_assign = .DivAssign };
+        if (std.mem.eql(u8, str, "%=")) return BinaryOperator{ .compound_assign = .ModAssign };
+        if (std.mem.eql(u8, str, "&=")) return BinaryOperator{ .compound_assign = .BitAndAssign };
+        if (std.mem.eql(u8, str, "|=")) return BinaryOperator{ .compound_assign = .BitOrAssign };
+        if (std.mem.eql(u8, str, "^=")) return BinaryOperator{ .compound_assign = .BitXorAssign };
+        if (std.mem.eql(u8, str, "<<=")) return BinaryOperator{ .compound_assign = .ShlAssign };
+        if (std.mem.eql(u8, str, ">>=")) return BinaryOperator{ .compound_assign = .ShrAssign };
 
         return error.InvalidEnumTag;
     }
@@ -354,8 +432,8 @@ pub const JsonAstNode = union(enum) {
     question: UnaryOperation,
     seq: struct { stmts: []*JsonAstNode },
     blk: struct { body: *JsonAstNode },
-    let: struct { nam: []const u8, value: *JsonAstNode, is_mut: bool },
-    assign: BinaryOperation,
+    assign: struct { nam: []const u8, value: *JsonAstNode, is_mut: bool },
+    reassign: BinaryOperation,
     compound_assign: BinaryOperation,
     type_cast: BinaryOperation,
     cond: struct { pred: *JsonAstNode, cons: *JsonAstNode, alt: *JsonAstNode },
