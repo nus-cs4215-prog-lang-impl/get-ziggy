@@ -179,6 +179,12 @@ pub const BinaryOperator = union(enum) {
     }
 };
 
+pub const BinaryOperation = struct {
+    sym: BinaryOperator,
+    first: *AstNode,
+    second: *AstNode,
+};
+
 pub const Param = struct {
     name: []const u8,
     // TODO: type_info?
@@ -210,21 +216,21 @@ pub const AstNode = union(enum) {
 };
 
 pub const JsonAstNode = union(enum) {
-    lit: Value, // TODO: This Value might always parse a string
+    lit: struct { val: Value },
     nam: []const u8,
     app: struct { nam: []const u8, args: []*AstNode }, // NOTE: This differs from initial, becuase we aren't using AstNode for func
-    logic: struct { op: LogicalOperator, left: *AstNode, right: *AstNode },
-    arith: struct { op: ArithOperator, left: *AstNode, right: *AstNode },
-    neg: struct { op: UnaryOperator, operand: *AstNode },
-    Lambda: struct { params: []Param, body: *AstNode },
+    logic: BinaryOperation,
+    arith: BinaryOperation,
+    neg: struct { sym: UnaryOperator, expr: *AstNode },
     seq: struct { stmts: []*AstNode },
     blk: struct { body: *AstNode },
-    VarDecl: struct { name: []const u8, value: *AstNode },
-    Assignment: struct { name: []const u8, value: *AstNode },
-    Conditional: struct { condition: *AstNode, cons: *AstNode, alt: *AstNode },
-    FnDecl: struct { name: []const u8, params: []Param, body: *AstNode },
-    Return: struct { value: ?*AstNode },
-    WhileLoop: struct { condition: *AstNode, body: *AstNode },
+    let: struct { nam: []const u8, value: *AstNode, is_mut: bool },
+    assign: struct { nam: []const u8, val: *AstNode },
+    cond: struct { pred: *AstNode, cons: *AstNode, alt: *AstNode },
+    fun: struct { nam: []const u8, params: []Param, body: *AstNode },
+    while_loop: struct { pred: *AstNode, body: *AstNode },
+    // TODO: return: struct { value: ?*AstNode },
+    // Other op types: borrow, deref, question, type_cast, compoud_assign
 };
 
 pub const Instruction = union(enum) {

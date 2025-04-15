@@ -1,0 +1,60 @@
+{
+  "blk": {
+    "body": {
+      "seq": {
+        "stmts": [
+          {
+            "fun": {
+              "nam": "main",
+              "params": [],
+              "body": {
+                "blk": {
+                  "body": {
+                    "seq": {
+                      "stmts": [
+                        {
+                          "let": {
+                            "is_mut": false,
+                            "nam": "x",
+                            "val": {
+                              "lit": {
+                                "val": "1"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "let": {
+                            "is_mut": true,
+                            "nam": "y",
+                            "val": {
+                              "lit": {
+                                "val": "2"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "let": {
+                            "is_mut": false,
+                            "nam": "b",
+                            "val": {
+                              "lit": {
+                                "val": "3_i32"
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          ""
+        ]
+      }
+    }
+  }
+}
