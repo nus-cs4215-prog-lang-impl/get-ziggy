@@ -244,17 +244,31 @@ def trim_expr(node, rule_names):
     elif rule_name == "literalExpression":
         val = node.getChild(0).getSymbol().text
         type_name = None
-        if val[0] == '"':
-            type_name = "string"
+
+        if val == "true" or val == "false":
+            type_name = "bool"
+        elif val.startswith('"') and val.endswith('"'):
+            type_name = "String"
+        elif val.startswith("'") and val.endswith("'"):
+            type_name = "String"
         elif "_" in val:
-            two = val.split("_")
-            assert len(two) == 2, "Assertion: literaly typed needs to have only one underscore"
-            val = two[0]
-            type_name = two[1]
+            parts = val.split("_", 1)
+            if len(parts) == 2 and parts[0]: # Ensure there's a value before '_'
+                val = parts[0]
+                type_name = parts[1]
         elif "." in val:
-            type_name = "f64"
+            try:
+                float(val) # Check if it's a valid float
+                type_name = "f64" # Default float type
+            except ValueError:
+                pass # Or raise an error, or assign a default type
         elif val.isdigit():
-            type_name = "i32"
+            type_name = "i32" # Default integer type
+
+        if type_name is None:
+            print(f"Warning: Could not determine type for literal: {val}")
+            return {"lit": {"val": val, "type_name": type_name}}
+
 
         return {"lit": {"val": val, "type_name": type_name}}
 
