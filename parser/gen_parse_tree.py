@@ -19,7 +19,7 @@ def parse_file(filepath):
     result = None
     try:
         tree = parser.crate()
-        # print(tree.toStringTree(parser.ruleNames))
+        print(tree.toStringTree(parser.ruleNames))
         result = trim_tree(tree, parser.ruleNames)
     except Exception as e:
         output.write("\n" * 2)
@@ -170,9 +170,9 @@ def trim_expr(node, rule_names):
             0
         ).getSymbol().text in ["return", "break", "continue"]:
             return {
-                node.getChild(0)
+                f"{node.getChild(0)
                 .getSymbol()
-                .text: {
+                .text}_stmt": {
                     "body": (
                         None
                         if node.getChildCount() != 2
@@ -242,6 +242,7 @@ def trim_expr(node, rule_names):
         }
 
     elif rule_name == "literalExpression":
+        print(node.getChild(0).getSymbol())
         return {"lit": {"val": node.getChild(0).getSymbol().text}}
 
     elif rule_name == "expressionWithBlock":
@@ -323,6 +324,13 @@ def trim_tree(node, rule_names):
                 child = node.getChild(i)
                 if isinstance(child, TerminalNode):
                     continue
+                rule = rule_names[child.getRuleIndex()]
+                if rule == "functionParameters":
+                    params = get_fn_params(child,rule_names)
+                elif rule == "functionReturnType":
+                    rtn_type = trim_type(child.getChild(1), rule_names)
+                elif rule == "blockExpression":
+                    body = trim_tree(child.getChild(1), rule_names)
 
             return {"fun": {"nam": fun_name, "params": params, "body": body}}
         elif rule_name == "blockExpression":
@@ -413,7 +421,7 @@ if __name__ == "__main__":
         # NOTE: if multple files with same name but diff dir are parsed then silent conflict
         out_filename = (args.f.split("/")[-1]).split(".")[0]
         with open(f"../out_parse/{out_filename}.json", "w", encoding="utf-8") as f:
-            # print(syntax_tree)
+            print(syntax_tree)
             json.dump(syntax_tree, f, indent=2)
     else:
         print(f"ERROR response is not created {syntax_tree}")
