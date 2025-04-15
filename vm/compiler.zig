@@ -315,7 +315,7 @@ pub const Compiler = struct {
         std.debug.print("Generated Instructions:\n", .{});
         for (instructions, 0..) |instr, i| {
             std.debug.print("{d}: ", .{i});
-            switch (instr.data) {
+            switch (instr) {
                 .Ldc => |val| std.debug.print("Ldc({any})\n", .{val}),
                 .Ld => |name| std.debug.print("Ld(\"{s}\")\n", .{name}),
                 .Assign => |name| std.debug.print("Assign(\"{s}\")\n", .{name}),
