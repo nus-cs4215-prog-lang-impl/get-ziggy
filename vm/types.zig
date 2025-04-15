@@ -13,18 +13,58 @@ pub const Value = union(enum) {
 };
 
 // Enum Types
-pub const UnaryOperator = enum {
+pub const BorrowOperator = enum {
+    Borrow, // &
+    BorrowRef, // &&
+
+    pub fn jsonStringify(self: BorrowOperator, writer: anytype) !void {
+        try writer.write(switch (self) {
+            .Borrow => "&",
+            .BorrowRef => "&&",
+        });
+    }
+
+    pub fn jsonParse(allocator: std.mem.Allocator, value: *json.Scanner, options: json.ParseOptions) !BorrowOperator {
+        const val = try json.innerParse(json.Value, allocator, value, options);
+        const str = val.string;
+        // std.debug.print("val: {}\n", .{val});
+        if (std.mem.eql(u8, str, "&")) return .Borrow;
+        if (std.mem.eql(u8, str, "&&")) return .BorrowRef;
+        return error.InvalidEnumTag;
+    }
+}
+
+pub const BorrowAttr = enum {
+    BorrowAttr, //mut
+
+    pub fn jsonStringify(self: BorrowOperator, writer: anytype) !void {
+        try writer.write(switch (self) {
+            .BorrowAttr => "mut",
+        });
+    }
+
+    pub fn jsonParse(allocator: std.mem.Allocator, value: *json.Scanner, options: json.ParseOptions) !BorrowOperator {
+        const val = try json.innerParse(json.Value, allocator, value, options);
+        const str = val.string;
+        // std.debug.print("val: {}\n", .{val});
+        if (std.mem.eql(u8, str, "mut")) return .BorrowAttr;
+        return error.InvalidEnumTag;
+    }
+}
+
+
+pub const NegateOperator = enum {
     Negate, // -
     Not, // !
 
-    pub fn jsonStringify(self: UnaryOperator, writer: anytype) !void {
+    pub fn jsonStringify(self: NegateOperator, writer: anytype) !void {
         try writer.write(switch (self) {
             .Negate => "-",
             .Not => "!",
         });
     }
 
-    pub fn jsonParse(allocator: std.mem.Allocator, value: *json.Scanner, options: json.ParseOptions) !UnaryOperator {
+    pub fn jsonParse(allocator: std.mem.Allocator, value: *json.Scanner, options: json.ParseOptions) !NegateOperator {
         const val = try json.innerParse(json.Value, allocator, value, options);
         const str = val.string;
         // std.debug.print("val: {}\n", .{val});
@@ -32,6 +72,92 @@ pub const UnaryOperator = enum {
         if (std.mem.eql(u8, str, "!")) return .Not;
         return error.InvalidEnumTag;
     }
+};
+
+pub const DerefOperator = enum {
+    Deref, // -
+
+    pub fn jsonStringify(self: DerefOperator, writer: anytype) !void {
+        try writer.write(switch (self) {
+            .Deref => "*",
+        });
+    }
+
+    pub fn jsonParse(allocator: std.mem.Allocator, value: *json.Scanner, options: json.ParseOptions) !DerefOperator {
+        const val = try json.innerParse(json.Value, allocator, value, options);
+        const str = val.string;
+        // std.debug.print("val: {}\n", .{val});
+        if (std.mem.eql(u8, str, "*")) return .Deref;
+        return error.InvalidEnumTag;
+    }
+}
+
+pub const QuestionOperator = enum {
+    Question, // ?
+
+    pub fn jsonStringify(self: QuestionOperator, writer: anytype) !void {
+        try writer.write(switch (self) {
+            .Deref => "?",
+        });
+    }
+
+    pub fn jsonParse(allocator: std.mem.Allocator, value: *json.Scanner, options: json.ParseOptions) !QuestionOperator {
+        const val = try json.innerParse(json.Value, allocator, value, options);
+        const str = val.string;
+        // std.debug.print("val: {}\n", .{val});
+        if (std.mem.eql(u8, str, "?")) return .Deref;
+        return error.InvalidEnumTag;
+    }
+
+}
+
+pub const UnaryOperator = union(enum) {
+    borrow: BorrowOperator,
+    borrow_mut: BorrowAttr,
+    deref: DerefOperator,
+    neg: NegateOperator,
+    question: QuestionOperator,
+
+    pub fn jsonStringify(self: UnaryOperator, writer: anytype) !void {
+        switch (self) {
+            .borrow => |borrow| try borrow.jsonStringify(writer),
+            .borrow_mut => |borrow_mut| try borrow_mut.jsonStringify(writer),
+            .deref => |deref| try deref.jsonStringify(writer),
+            .neg => |neg| try neg.jsonStringify(writer),
+            .question => |question| try question.jsonStringify(writer),
+        }
+    }
+
+    pub fn jsonParse(allocator: std.mem.Allocator, value: *json.Scanner, options: json.ParseOptions) !UnaryOperator {
+        const val = try json.innerParse(json.Value, allocator, value, options);
+        const str = val.string;
+        // std.debug.print("val: {}\n", .{val});
+
+        // Check for BorrowOperator
+        if (std.mem.eql(u8, str, "&")) return UnaryOperator{ .borrow = .Borrow };
+        if (std.mem.eql(u8, str, "&&")) return UnaryOperator{ .borrow = .BorrowRef };
+
+        // Check for BorrowAttr
+        if (std.mem.eql(u8, str, "mut")) return UnaryOperator{ .borrow_mut = .BorrowAttr };
+
+        // Check for DerefOperator
+        if (std.mem.eql(u8, str, "*")) return UnaryOperator{ .deref = .Deref };
+
+        // Check for NegateOperator
+        if (std.mem.eql(u8, str, "-")) return UnaryOperator{ .neg = .Negate };
+        if (std.mem.eql(u8, str, "!")) return UnaryOperator{ .neg = .Not };
+
+        // Check for QuestionOperator
+        if (std.mem.eql(u8, str, "?")) return UnaryOperator{ .question = .Question };
+
+        // If none match, return an error
+        return error.InvalidEnumTag;
+    }
+}
+
+pub const UnaryOperation = struct {
+    sym: UnaryOperator,
+    body: *JsonAstNode,
 };
 
 pub const CompOperator = enum {
@@ -221,14 +347,21 @@ pub const JsonAstNode = union(enum) {
     app: struct { nam: []const u8, args: []*JsonAstNode }, // NOTE: This differs from initial, becuase we aren't using AstNode for func
     logic: BinaryOperation,
     arith: BinaryOperation,
-    neg: struct { sym: UnaryOperator, expr: *JsonAstNode },
+    borrow: UnaryOperation,
+    borrow_mut: UnaryOperation,
+    deref: UnaryOperation,
+    neg: UnaryOperation,
+    question: UnaryOperation,
     seq: struct { stmts: []*JsonAstNode },
     blk: struct { body: *JsonAstNode },
     let: struct { nam: []const u8, value: *JsonAstNode, is_mut: bool },
-    assign: struct { nam: []const u8, val: *JsonAstNode },
+    assign: BinaryOperation,
+    compound_assign: BinaryOperation,
+    type_cast: BinaryOperation,
     cond: struct { pred: *JsonAstNode, cons: *JsonAstNode, alt: *JsonAstNode },
     fun: struct { nam: []const u8, params: []Param, body: *JsonAstNode },
     while_loop: struct { pred: *JsonAstNode, body: *JsonAstNode },
+    return_statement: struct { body: *JsonAstNode },
     // TODO: return: struct { value: ?*JsonAstNode },
     // Other op types: borrow, deref, question, type_cast, compoud_assign
 };
