@@ -60,7 +60,7 @@ def get_fn_params(node, rule_names):
             param.getChildCount() == 3
         ), "Assertion: Function parameters must be explicitly typed (totalling in 3 items)"
         id = get_pattern_id(param, rule_names).getSymbol()
-        out.append({"nam": id.text, "type": trim_type(param.getChild(2), rule_names)})
+        out.append({"nam": id.text, "type_name": trim_type(param.getChild(2), rule_names)})
 
     return out
 
@@ -146,7 +146,7 @@ def expr_infix_operator(node):
     elif infix in type_cast:
         op_type = "typecast"
     elif infix in assign:
-        op_type = "assign"
+        op_type = "reassign"
     elif infix in compound_assign:
         op_type = "compound_assign"
     else:
@@ -332,7 +332,7 @@ def trim_tree(node, rule_names):
                 elif rule == "blockExpression":
                     body = trim_tree(child.getChild(1), rule_names)
 
-            return {"fun": {"nam": fun_name, "params": params, "body": body}}
+            return {"fun": {"nam": fun_name, "params": params, "return_type": rtn_type, "body": body}}
         elif rule_name == "blockExpression":
             return {"blk": {"body": trim_tree(node.getChild(1), rule_names)}}
         elif rule_name == "statements":
@@ -379,6 +379,7 @@ def trim_tree(node, rule_names):
             return {
                 "assign": {
                     "is_mut": is_mut,
+                    "type_name": type_name,
                     "nam": nam,
                     "val": rhs_node,
                 }
