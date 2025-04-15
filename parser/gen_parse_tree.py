@@ -19,7 +19,7 @@ def parse_file(filepath):
     result = None
     try:
         tree = parser.crate()
-        # print(tree.toStringTree(parser.ruleNames))
+        print(tree.toStringTree(parser.ruleNames))
         result = trim_tree(tree, parser.ruleNames)
     except Exception as e:
         output.write("\n" * 2)
@@ -309,17 +309,18 @@ def trim_tree(node, rule_names):
                 body = trim_tree(node.getChild(6), rule_names)
 
             return {"fun": {"nam": fun_name, "params": params, "body": body}}
+
         elif rule_name == "blockExpression":
             return {"blk": {"body": trim_tree(node.getChild(1), rule_names)}}
+
         elif rule_name == "statements":
-            return {
-                "seq": {
-                    "stmts": [
-                        trim_tree(node.getChild(i), rule_names)
-                        for i in range(node.getChildCount())
-                    ],
-                }
-            }
+            all = []
+            for i in range(node.getChildCount()):
+                stmt = trim_tree(node.getChild(i), rule_names)
+                if stmt != "":
+                    all.append(stmt)
+            return {"seq": {"stmts": all}}
+
         elif rule_name == "statement":
             assert node.getChildCount() == 1, "Assertion: Statement has 1 child"
             return trim_tree(node.getChild(0), rule_names)
@@ -360,18 +361,14 @@ def trim_tree(node, rule_names):
             return trim_tree(node.getChild(0), rule_names)
 
         elif rule_name == "crate":
-            return {
-                "blk": {
-                    "body": {
-                        "seq": {
-                            "stmts": [
-                                trim_tree(node.getChild(i), rule_names)
-                                for i in range(node.getChildCount())
-                            ],
-                        }
-                    },
-                }
-            }
+            all = []
+            for i in range(node.getChildCount()):
+                stmt = trim_tree(node.getChild(i), rule_names)
+                if stmt != "":
+                    all.append(stmt)
+
+            # NOTE: blocks and statements are used as proxies for items
+            return {"blk": {"body": {"seq": {"stmts": all}}}}
         else:
             raise NotImplementedError(f"Rule name {rule_name} not implemented in parse")
 
