@@ -3,13 +3,36 @@ const json = std.json;
 // Primitive Types
 // We differentiate betweeen the primitive types in rust and zig
 // by using PascalCase for the Rust types
-pub const Value = union(enum) {
-    // TODO: Might want to add char as primitive
-    Int: i64,
-    Float: f64,
-    Bool: bool,
-    String: []const u8, // TODO: Rust doesn't really have Strings as primitives, so this might not be needed
-    Undefined: void,
+pub const TypeName = enum {
+    i32,
+    f32,
+    String,
+    Undefined,
+
+    pub fn jsonStringify(self: BorrowOperator, writer: anytype) !void {
+        try writer.write(switch (self) {
+            .i32 => "i32",
+            .f32 => "f32",
+            .String => "String",
+            .Undefined => "undefined",
+        });
+    }
+
+    pub fn jsonParse(allocator: std.mem.Allocator, value: *json.Scanner, options: json.ParseOptions) !BorrowAttr {
+        const val = try json.innerParse(json.Value, allocator, value, options);
+        const str = val.string;
+        // std.debug.print("val: {}\n", .{val});
+        if (std.mem.eql(u8, str, "i32")) return .i32;
+        if (std.mem.eql(u8, str, "f32")) return .f32;
+        if (std.mem.eql(u8, str, "String")) return .String;
+        if (std.mem.eql(u8, str, "undefined")) return .Undefined;
+        return error.InvalidEnumTag;
+    }
+};
+
+pub const LiteralVal = struct {
+    val: []const u8,
+    type_name: TypeName,
 };
 
 // Enum Types
@@ -424,7 +447,7 @@ pub const CompileErrors = error{
 
 // AstNode Declaration
 pub const AstNode = union(enum) {
-    Literal: Value,
+    Literal: LiteralVal,
     Name: []const u8,
     App: struct { func: *AstNode, args: []*AstNode },
     LogicalOp: struct { op: LogicalOperator, left: *AstNode, right: *AstNode },
@@ -442,7 +465,7 @@ pub const AstNode = union(enum) {
 };
 
 pub const JsonAstNode = union(enum) {
-    lit: struct { val: Value },
+    lit: LiteralVal,
     nam: []const u8,
     app: struct { nam: []const u8, args: []*JsonAstNode },
     logic: BinaryOperation,
@@ -465,7 +488,7 @@ pub const JsonAstNode = union(enum) {
 };
 
 pub const Instruction = union(enum) {
-    Ldc: Value, // Load constant
+    Ldc: LiteralVal, // Load constant
     Ld: []const u8, // Load variable by name
     Assign: []const u8, // Assign to variable name
     Unop: UnaryOperator,
