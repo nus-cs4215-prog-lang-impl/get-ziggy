@@ -181,8 +181,8 @@ pub const BinaryOperator = union(enum) {
 
 pub const BinaryOperation = struct {
     sym: BinaryOperator,
-    first: *AstNode,
-    second: *AstNode,
+    first: *JsonAstNode,
+    second: *JsonAstNode,
 };
 
 pub const Param = struct {
@@ -218,18 +218,18 @@ pub const AstNode = union(enum) {
 pub const JsonAstNode = union(enum) {
     lit: struct { val: Value },
     nam: []const u8,
-    app: struct { nam: []const u8, args: []*AstNode }, // NOTE: This differs from initial, becuase we aren't using AstNode for func
+    app: struct { nam: []const u8, args: []*JsonAstNode }, // NOTE: This differs from initial, becuase we aren't using AstNode for func
     logic: BinaryOperation,
     arith: BinaryOperation,
-    neg: struct { sym: UnaryOperator, expr: *AstNode },
-    seq: struct { stmts: []*AstNode },
-    blk: struct { body: *AstNode },
-    let: struct { nam: []const u8, value: *AstNode, is_mut: bool },
-    assign: struct { nam: []const u8, val: *AstNode },
-    cond: struct { pred: *AstNode, cons: *AstNode, alt: *AstNode },
-    fun: struct { nam: []const u8, params: []Param, body: *AstNode },
-    while_loop: struct { pred: *AstNode, body: *AstNode },
-    // TODO: return: struct { value: ?*AstNode },
+    neg: struct { sym: UnaryOperator, expr: *JsonAstNode },
+    seq: struct { stmts: []*JsonAstNode },
+    blk: struct { body: *JsonAstNode },
+    let: struct { nam: []const u8, value: *JsonAstNode, is_mut: bool },
+    assign: struct { nam: []const u8, val: *JsonAstNode },
+    cond: struct { pred: *JsonAstNode, cons: *JsonAstNode, alt: *JsonAstNode },
+    fun: struct { nam: []const u8, params: []Param, body: *JsonAstNode },
+    while_loop: struct { pred: *JsonAstNode, body: *JsonAstNode },
+    // TODO: return: struct { value: ?*JsonAstNode },
     // Other op types: borrow, deref, question, type_cast, compoud_assign
 };
 

@@ -4,57 +4,10 @@
       "seq": {
         "stmts": [
           {
-            "fun": {
-              "nam": "main",
-              "params": [],
-              "body": {
-                "blk": {
-                  "body": {
-                    "seq": {
-                      "stmts": [
-                        {
-                          "lit": {
-                            "val": "\"hello\""
-                          }
-                        },
-                        {
-                          "lit": {
-                            "val": "'a'"
-                          }
-                        },
-                        {
-                          "lit": {
-                            "val": "1"
-                          }
-                        },
-                        {
-                          "lit": {
-                            "val": "3.14"
-                          }
-                        },
-                        {
-                          "lit": {
-                            "val": "true"
-                          }
-                        },
-                        {
-                          "lit": {
-                            "val": "123u32"
-                          }
-                        },
-                        {
-                          "lit": {
-                            "val": "123_u32"
-                          }
-                        }
-                      ]
-                    }
-                  }
-                }
-              }
+            "lit": {
+              "val": "hello"
             }
-          },
-          ""
+          }
         ]
       }
     }
