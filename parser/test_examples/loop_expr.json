@@ -1,66 +1,82 @@
 {
-  "tag": "blk",
-  "body": {
-    "tag": "seq",
-    "stmts": [
-      {
-        "tag": "fun",
-        "nam": "main",
-        "params": [],
-        "body": {
-          "tag": "blk",
-          "body": {
-            "tag": "seq",
-            "stmts": [
-              {
-                "tag": "assign",
-                "is_mut": true,
-                "nam": "a",
-                "val": {
-                  "tag": "lit",
-                  "val": "0"
-                }
-              },
-              {
-                "tag": "while",
-                "pred": {
-                  "tag": "comp",
-                  "sym": "<",
-                  "first": {
-                    "tag": "nam",
-                    "val": "a"
-                  },
-                  "second": {
-                    "tag": "lit",
-                    "val": "10"
-                  }
-                },
-                "body": {
-                  "tag": "blk",
+  "blk": {
+    "body": {
+      "seq": {
+        "stmts": [
+          {
+            "fun": {
+              "nam": "main",
+              "params": [],
+              "body": {
+                "blk": {
                   "body": {
-                    "tag": "seq",
-                    "stmts": [
-                      {
-                        "tag": "compound_assign",
-                        "sym": "+=",
-                        "first": {
-                          "tag": "nam",
-                          "val": "a"
+                    "seq": {
+                      "stmts": [
+                        {
+                          "assign": {
+                            "is_mut": true,
+                            "nam": "a",
+                            "val": {
+                              "lit": {
+                                "val": "0"
+                              }
+                            }
+                          }
                         },
-                        "second": {
-                          "tag": "lit",
-                          "val": "1"
+                        {
+                          "while": {
+                            "pred": {
+                              "comp": {
+                                "sym": "<",
+                                "first": {
+                                  "nam": {
+                                    "val": "a"
+                                  }
+                                },
+                                "second": {
+                                  "lit": {
+                                    "val": "10"
+                                  }
+                                }
+                              }
+                            },
+                            "body": {
+                              "blk": {
+                                "body": {
+                                  "seq": {
+                                    "stmts": [
+                                      {
+                                        "compound_assign": {
+                                          "sym": "+=",
+                                          "first": {
+                                            "nam": {
+                                              "val": "a"
+                                            }
+                                          },
+                                          "second": {
+                                            "lit": {
+                                              "val": "1"
+                                            }
+                                          }
+                                        }
+                                      }
+                                    ]
+                                  }
+                                }
+                              }
+                            }
+                          }
                         }
-                      }
-                    ]
+                      ]
+                    }
                   }
                 }
               }
-            ]
-          }
-        }
-      },
-      ""
-    ]
+            }
+          },
+          ""
+        ]
+      }
+    }
   }
 }

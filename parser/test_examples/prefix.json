@@ -1,78 +1,97 @@
 {
-  "tag": "blk",
-  "body": {
-    "tag": "seq",
-    "stmts": [
-      {
-        "tag": "fun",
-        "nam": "main",
-        "params": [],
-        "body": {
-          "tag": "blk",
-          "body": {
-            "tag": "seq",
-            "stmts": [
-              {
-                "tag": "borrow",
-                "sym": "&",
-                "first": {
-                  "tag": "nam",
-                  "val": "x"
-                }
-              },
-              {
-                "tag": "borrow",
-                "sym": "&&",
-                "first": {
-                  "tag": "nam",
-                  "val": "y"
-                }
-              },
-              {
-                "tag": "borrow mut",
-                "sym": "&",
-                "first": {
-                  "tag": "nam",
-                  "val": "x"
-                }
-              },
-              {
-                "tag": "borrow mut",
-                "sym": "&&",
-                "first": {
-                  "tag": "nam",
-                  "val": "y"
-                }
-              },
-              {
-                "tag": "deref",
-                "sym": "*",
-                "first": {
-                  "tag": "nam",
-                  "val": "x"
-                }
-              },
-              {
-                "tag": "neg",
-                "sym": "!",
-                "first": {
-                  "tag": "lit",
-                  "val": "true"
-                }
-              },
-              {
-                "tag": "neg",
-                "sym": "-",
-                "first": {
-                  "tag": "lit",
-                  "val": "1"
+  "blk": {
+    "body": {
+      "seq": {
+        "stmts": [
+          {
+            "fun": {
+              "nam": "main",
+              "params": [],
+              "body": {
+                "blk": {
+                  "body": {
+                    "seq": {
+                      "stmts": [
+                        {
+                          "borrow": {
+                            "sym": "&",
+                            "first": {
+                              "nam": {
+                                "val": "x"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "borrow": {
+                            "sym": "&&",
+                            "first": {
+                              "nam": {
+                                "val": "y"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "borrow mut": {
+                            "sym": "&",
+                            "first": {
+                              "nam": {
+                                "val": "x"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "borrow mut": {
+                            "sym": "&&",
+                            "first": {
+                              "nam": {
+                                "val": "y"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "deref": {
+                            "sym": "*",
+                            "first": {
+                              "nam": {
+                                "val": "x"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "neg": {
+                            "sym": "!",
+                            "first": {
+                              "lit": {
+                                "val": "true"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "neg": {
+                            "sym": "-",
+                            "first": {
+                              "lit": {
+                                "val": "1"
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
                 }
               }
-            ]
-          }
-        }
-      },
-      ""
-    ]
+            }
+          },
+          ""
+        ]
+      }
+    }
   }
 }

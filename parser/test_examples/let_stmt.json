@@ -1,49 +1,60 @@
 {
-  "tag": "blk",
-  "body": {
-    "tag": "seq",
-    "stmts": [
-      {
-        "tag": "fun",
-        "nam": "main",
-        "params": [],
-        "body": {
-          "tag": "blk",
-          "body": {
-            "tag": "seq",
-            "stmts": [
-              {
-                "tag": "assign",
-                "is_mut": false,
-                "nam": "x",
-                "val": {
-                  "tag": "lit",
-                  "val": "1"
-                }
-              },
-              {
-                "tag": "assign",
-                "is_mut": true,
-                "nam": "y",
-                "val": {
-                  "tag": "lit",
-                  "val": "2"
-                }
-              },
-              {
-                "tag": "assign",
-                "is_mut": false,
-                "nam": "b",
-                "val": {
-                  "tag": "lit",
-                  "val": "3_i32"
+  "blk": {
+    "body": {
+      "seq": {
+        "stmts": [
+          {
+            "fun": {
+              "nam": "main",
+              "params": [],
+              "body": {
+                "blk": {
+                  "body": {
+                    "seq": {
+                      "stmts": [
+                        {
+                          "assign": {
+                            "is_mut": false,
+                            "nam": "x",
+                            "val": {
+                              "lit": {
+                                "val": "1"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "assign": {
+                            "is_mut": true,
+                            "nam": "y",
+                            "val": {
+                              "lit": {
+                                "val": "2"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "assign": {
+                            "is_mut": false,
+                            "nam": "b",
+                            "val": {
+                              "lit": {
+                                "val": "3_i32"
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
                 }
               }
-            ]
-          }
-        }
-      },
-      ""
-    ]
+            }
+          },
+          ""
+        ]
+      }
+    }
   }
 }

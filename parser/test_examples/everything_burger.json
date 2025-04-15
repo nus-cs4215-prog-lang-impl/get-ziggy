@@ -1,689 +1,855 @@
 {
-  "tag": "blk",
-  "body": {
-    "tag": "seq",
-    "stmts": [
-      {
-        "tag": "fun",
-        "nam": "one",
-        "params": [],
-        "body": {
-          "tag": "blk",
-          "body": {
-            "tag": "seq",
-            "stmts": [
-              {
-                "tag": "lit",
-                "val": "1"
+  "blk": {
+    "body": {
+      "seq": {
+        "stmts": [
+          {
+            "fun": {
+              "nam": "one",
+              "params": [],
+              "body": {
+                "blk": {
+                  "body": {
+                    "seq": {
+                      "stmts": [
+                        {
+                          "lit": {
+                            "val": "1"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
               }
-            ]
-          }
-        }
-      },
-      {
-        "tag": "fun",
-        "nam": "foo",
-        "params": [
-          {
-            "nam": "a",
-            "type": null
-          }
-        ],
-        "body": {
-          "tag": "blk",
-          "body": ""
-        }
-      },
-      {
-        "tag": "fun",
-        "nam": "bar",
-        "params": [
-          {
-            "nam": "a",
-            "type": null
+            }
           },
           {
-            "nam": "b",
-            "type": null
-          }
-        ],
-        "body": {
-          "tag": "blk",
-          "body": ""
-        }
-      },
-      {
-        "tag": "fun",
-        "nam": "main",
-        "params": [],
-        "body": {
-          "tag": "blk",
-          "body": {
-            "tag": "seq",
-            "stmts": [
-              {
-                "tag": "app",
-                "nam": {
-                  "tag": "nam",
-                  "val": "show"
-                },
-                "args": []
-              },
-              {
-                "tag": "app",
-                "nam": {
-                  "tag": "nam",
-                  "val": "foo"
-                },
-                "args": [
-                  {
-                    "tag": "lit",
-                    "val": "1"
-                  }
-                ]
-              },
-              {
-                "tag": "app",
-                "nam": {
-                  "tag": "nam",
-                  "val": "bar"
-                },
-                "args": [
-                  {
-                    "tag": "app",
-                    "nam": {
-                      "tag": "nam",
-                      "val": "one"
-                    },
-                    "args": []
-                  },
-                  {
-                    "tag": "app",
-                    "nam": {
-                      "tag": "nam",
-                      "val": "foo"
-                    },
-                    "args": [
-                      {
-                        "tag": "lit",
-                        "val": "1"
-                      }
-                    ]
-                  }
-                ]
-              },
-              {
-                "tag": "blk",
-                "body": {
-                  "tag": "seq",
-                  "stmts": [
-                    {
-                      "tag": "lit",
-                      "val": "\"HI\""
-                    }
-                  ]
+            "fun": {
+              "nam": "foo",
+              "params": [
+                {
+                  "nam": "a",
+                  "type": null
                 }
-              },
-              {
-                "tag": "assign",
-                "is_mut": false,
-                "nam": "n",
-                "val": {
-                  "tag": "lit",
-                  "val": "5"
-                }
-              },
-              {
-                "tag": "cond",
-                "pred": {
-                  "tag": "comp",
-                  "sym": "<",
-                  "first": {
-                    "tag": "nam",
-                    "val": "n"
-                  },
-                  "second": {
-                    "tag": "lit",
-                    "val": "0"
-                  }
-                },
-                "cons": {
-                  "tag": "blk",
-                  "body": {
-                    "tag": "seq",
-                    "stmts": [
-                      {
-                        "tag": "app",
-                        "nam": {
-                          "tag": "nam",
-                          "val": "print"
-                        },
-                        "args": [
-                          {
-                            "tag": "lit",
-                            "val": "\"{} is negative\""
-                          },
-                          {
-                            "tag": "nam",
-                            "val": "n"
-                          }
-                        ]
-                      }
-                    ]
-                  }
-                },
-                "alt": {
-                  "tag": "cond",
-                  "pred": {
-                    "tag": "comp",
-                    "sym": ">",
-                    "first": {
-                      "tag": "nam",
-                      "val": "n"
-                    },
-                    "second": {
-                      "tag": "lit",
-                      "val": "0"
-                    }
-                  },
-                  "cons": {
-                    "tag": "blk",
-                    "body": {
-                      "tag": "seq",
-                      "stmts": [
-                        {
-                          "tag": "app",
-                          "nam": {
-                            "tag": "nam",
-                            "val": "print"
-                          },
-                          "args": [
-                            {
-                              "tag": "lit",
-                              "val": "\"{} is positive\""
-                            },
-                            {
-                              "tag": "nam",
-                              "val": "n"
-                            }
-                          ]
-                        }
-                      ]
-                    }
-                  },
-                  "alt": {
-                    "tag": "blk",
-                    "body": {
-                      "tag": "seq",
-                      "stmts": [
-                        {
-                          "tag": "app",
-                          "nam": {
-                            "tag": "nam",
-                            "val": "print"
-                          },
-                          "args": [
-                            {
-                              "tag": "lit",
-                              "val": "\"{} is zero\""
-                            },
-                            {
-                              "tag": "nam",
-                              "val": "n"
-                            }
-                          ]
-                        }
-                      ]
-                    }
-                  }
-                }
-              },
-              {
-                "tag": "arith",
-                "sym": "+",
-                "first": {
-                  "tag": "lit",
-                  "val": "1"
-                },
-                "second": {
-                  "tag": "lit",
-                  "val": "2"
-                }
-              },
-              {
-                "tag": "comp",
-                "sym": "==",
-                "first": {
-                  "tag": "lit",
-                  "val": "true"
-                },
-                "second": {
-                  "tag": "lit",
-                  "val": "false"
-                }
-              },
-              {
-                "tag": "comp",
-                "sym": ">",
-                "first": {
-                  "tag": "lit",
-                  "val": "3"
-                },
-                "second": {
-                  "tag": "lit",
-                  "val": "2"
-                }
-              },
-              {
-                "tag": "comp",
-                "sym": "==",
-                "first": {
-                  "tag": "arith",
-                  "sym": "+",
-                  "first": {
-                    "tag": "lit",
-                    "val": "1"
-                  },
-                  "second": {
-                    "tag": "lit",
-                    "val": "2"
-                  }
-                },
-                "second": {
-                  "tag": "arith",
-                  "sym": "*",
-                  "first": {
-                    "tag": "lit",
-                    "val": "3"
-                  },
-                  "second": {
-                    "tag": "lit",
-                    "val": "12"
-                  }
-                }
-              },
-              {
-                "tag": "logic",
-                "sym": "&&",
-                "first": {
-                  "tag": "comp",
-                  "sym": ">",
-                  "first": {
-                    "tag": "lit",
-                    "val": "3"
-                  },
-                  "second": {
-                    "tag": "lit",
-                    "val": "2"
-                  }
-                },
-                "second": {
-                  "tag": "comp",
-                  "sym": "<",
-                  "first": {
-                    "tag": "arith",
-                    "sym": "+",
-                    "first": {
-                      "tag": "lit",
-                      "val": "1"
-                    },
-                    "second": {
-                      "tag": "lit",
-                      "val": "2"
-                    }
-                  },
-                  "second": {
-                    "tag": "lit",
-                    "val": "1"
-                  }
-                }
-              },
-              {
-                "tag": "assign",
-                "is_mut": false,
-                "nam": "x",
-                "val": {
-                  "tag": "lit",
-                  "val": "1"
-                }
-              },
-              {
-                "tag": "assign",
-                "is_mut": true,
-                "nam": "y",
-                "val": {
-                  "tag": "lit",
-                  "val": "2"
-                }
-              },
-              {
-                "tag": "assign",
-                "is_mut": false,
-                "nam": "b",
-                "val": {
-                  "tag": "lit",
-                  "val": "3_i32"
-                }
-              },
-              {
-                "tag": "lit",
-                "val": "\"hello\""
-              },
-              {
-                "tag": "lit",
-                "val": "'a'"
-              },
-              {
-                "tag": "lit",
-                "val": "1"
-              },
-              {
-                "tag": "lit",
-                "val": "3.14"
-              },
-              {
-                "tag": "lit",
-                "val": "true"
-              },
-              {
-                "tag": "lit",
-                "val": "123u32"
-              },
-              {
-                "tag": "lit",
-                "val": "123_u32"
-              },
-              {
-                "tag": "assign",
-                "is_mut": true,
-                "nam": "a",
-                "val": {
-                  "tag": "lit",
-                  "val": "0"
-                }
-              },
-              {
-                "tag": "while",
-                "pred": {
-                  "tag": "comp",
-                  "sym": "<",
-                  "first": {
-                    "tag": "nam",
-                    "val": "a"
-                  },
-                  "second": {
-                    "tag": "lit",
-                    "val": "10"
-                  }
-                },
-                "body": {
-                  "tag": "blk",
-                  "body": {
-                    "tag": "seq",
-                    "stmts": [
-                      {
-                        "tag": "compound_assign",
-                        "sym": "+=",
-                        "first": {
-                          "tag": "nam",
-                          "val": "a"
-                        },
-                        "second": {
-                          "tag": "lit",
-                          "val": "1"
-                        }
-                      }
-                    ]
-                  }
-                }
-              },
-              {
-                "tag": "nam",
-                "val": "a"
-              },
-              {
-                "tag": "nam",
-                "val": "foo"
-              },
-              {
-                "tag": "question",
-                "sym": "?",
-                "first": {
-                  "tag": "nam",
-                  "val": "a"
-                }
-              },
-              {
-                "tag": "borrow",
-                "sym": "&",
-                "first": {
-                  "tag": "nam",
-                  "val": "x"
-                }
-              },
-              {
-                "tag": "borrow",
-                "sym": "&&",
-                "first": {
-                  "tag": "nam",
-                  "val": "y"
-                }
-              },
-              {
-                "tag": "borrow mut",
-                "sym": "&",
-                "first": {
-                  "tag": "nam",
-                  "val": "x"
-                }
-              },
-              {
-                "tag": "borrow mut",
-                "sym": "&&",
-                "first": {
-                  "tag": "nam",
-                  "val": "y"
-                }
-              },
-              {
-                "tag": "deref",
-                "sym": "*",
-                "first": {
-                  "tag": "nam",
-                  "val": "x"
-                }
-              },
-              {
-                "tag": "neg",
-                "sym": "!",
-                "first": {
-                  "tag": "lit",
-                  "val": "true"
-                }
-              },
-              {
-                "tag": "neg",
-                "sym": "-",
-                "first": {
-                  "tag": "lit",
-                  "val": "1"
-                }
-              },
-              {
-                "tag": "assign",
-                "is_mut": true,
-                "nam": "a",
-                "val": {
-                  "tag": "lit",
-                  "val": "0"
-                }
-              },
-              {
-                "tag": "while",
-                "pred": {
-                  "tag": "comp",
-                  "sym": "<",
-                  "first": {
-                    "tag": "nam",
-                    "val": "a"
-                  },
-                  "second": {
-                    "tag": "lit",
-                    "val": "10"
-                  }
-                },
-                "body": {
-                  "tag": "blk",
-                  "body": {
-                    "tag": "seq",
-                    "stmts": [
-                      {
-                        "tag": "cond",
-                        "pred": {
-                          "tag": "comp",
-                          "sym": "==",
-                          "first": {
-                            "tag": "arith",
-                            "sym": "%",
-                            "first": {
-                              "tag": "nam",
-                              "val": "a"
-                            },
-                            "second": {
-                              "tag": "lit",
-                              "val": "2"
-                            }
-                          },
-                          "second": {
-                            "tag": "lit",
-                            "val": "1"
-                          }
-                        },
-                        "cons": {
-                          "tag": "blk",
-                          "body": {
-                            "tag": "seq",
-                            "stmts": [
-                              {
-                                "tag": "break",
-                                "body": null
-                              }
-                            ]
-                          }
-                        },
-                        "alt": null
-                      },
-                      {
-                        "tag": "compound_assign",
-                        "sym": "+=",
-                        "first": {
-                          "tag": "nam",
-                          "val": "a"
-                        },
-                        "second": {
-                          "tag": "lit",
-                          "val": "1"
-                        }
-                      }
-                    ]
-                  }
-                }
-              },
-              {
-                "tag": "assign",
-                "sym": "=",
-                "first": {
-                  "tag": "nam",
-                  "val": "a"
-                },
-                "second": {
-                  "tag": "lit",
-                  "val": "0"
-                }
-              },
-              {
-                "tag": "while",
-                "pred": {
-                  "tag": "comp",
-                  "sym": "<",
-                  "first": {
-                    "tag": "nam",
-                    "val": "a"
-                  },
-                  "second": {
-                    "tag": "lit",
-                    "val": "10"
-                  }
-                },
-                "body": {
-                  "tag": "blk",
-                  "body": {
-                    "tag": "seq",
-                    "stmts": [
-                      {
-                        "tag": "cond",
-                        "pred": {
-                          "tag": "comp",
-                          "sym": "==",
-                          "first": {
-                            "tag": "arith",
-                            "sym": "%",
-                            "first": {
-                              "tag": "nam",
-                              "val": "a"
-                            },
-                            "second": {
-                              "tag": "lit",
-                              "val": "2"
-                            }
-                          },
-                          "second": {
-                            "tag": "lit",
-                            "val": "1"
-                          }
-                        },
-                        "cons": {
-                          "tag": "blk",
-                          "body": {
-                            "tag": "seq",
-                            "stmts": [
-                              {
-                                "tag": "continue",
-                                "body": null
-                              }
-                            ]
-                          }
-                        },
-                        "alt": null
-                      },
-                      {
-                        "tag": "compound_assign",
-                        "sym": "+=",
-                        "first": {
-                          "tag": "nam",
-                          "val": "a"
-                        },
-                        "second": {
-                          "tag": "lit",
-                          "val": "1"
-                        }
-                      }
-                    ]
-                  }
-                }
-              },
-              {
-                "tag": "return",
-                "body": {
-                  "tag": "nam",
-                  "val": "a"
+              ],
+              "body": {
+                "blk": {
+                  "body": ""
                 }
               }
-            ]
-          }
-        }
-      },
-      ""
-    ]
+            }
+          },
+          {
+            "fun": {
+              "nam": "bar",
+              "params": [
+                {
+                  "nam": "a",
+                  "type": null
+                },
+                {
+                  "nam": "b",
+                  "type": null
+                }
+              ],
+              "body": {
+                "blk": {
+                  "body": ""
+                }
+              }
+            }
+          },
+          {
+            "fun": {
+              "nam": "main",
+              "params": [],
+              "body": {
+                "blk": {
+                  "body": {
+                    "seq": {
+                      "stmts": [
+                        {
+                          "app": {
+                            "nam": {
+                              "nam": {
+                                "val": "show"
+                              }
+                            },
+                            "args": []
+                          }
+                        },
+                        {
+                          "app": {
+                            "nam": {
+                              "nam": {
+                                "val": "foo"
+                              }
+                            },
+                            "args": [
+                              {
+                                "lit": {
+                                  "val": "1"
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "app": {
+                            "nam": {
+                              "nam": {
+                                "val": "bar"
+                              }
+                            },
+                            "args": [
+                              {
+                                "app": {
+                                  "nam": {
+                                    "nam": {
+                                      "val": "one"
+                                    }
+                                  },
+                                  "args": []
+                                }
+                              },
+                              {
+                                "app": {
+                                  "nam": {
+                                    "nam": {
+                                      "val": "foo"
+                                    }
+                                  },
+                                  "args": [
+                                    {
+                                      "lit": {
+                                        "val": "1"
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "blk": {
+                            "body": {
+                              "seq": {
+                                "stmts": [
+                                  {
+                                    "lit": {
+                                      "val": "\"HI\""
+                                    }
+                                  }
+                                ]
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "assign": {
+                            "is_mut": false,
+                            "nam": "n",
+                            "val": {
+                              "lit": {
+                                "val": "5"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "cond": {
+                            "pred": {
+                              "comp": {
+                                "sym": "<",
+                                "first": {
+                                  "nam": {
+                                    "val": "n"
+                                  }
+                                },
+                                "second": {
+                                  "lit": {
+                                    "val": "0"
+                                  }
+                                }
+                              }
+                            },
+                            "cons": {
+                              "blk": {
+                                "body": {
+                                  "seq": {
+                                    "stmts": [
+                                      {
+                                        "app": {
+                                          "nam": {
+                                            "nam": {
+                                              "val": "print"
+                                            }
+                                          },
+                                          "args": [
+                                            {
+                                              "lit": {
+                                                "val": "\"{} is negative\""
+                                              }
+                                            },
+                                            {
+                                              "nam": {
+                                                "val": "n"
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    ]
+                                  }
+                                }
+                              }
+                            },
+                            "alt": {
+                              "cond": {
+                                "pred": {
+                                  "comp": {
+                                    "sym": ">",
+                                    "first": {
+                                      "nam": {
+                                        "val": "n"
+                                      }
+                                    },
+                                    "second": {
+                                      "lit": {
+                                        "val": "0"
+                                      }
+                                    }
+                                  }
+                                },
+                                "cons": {
+                                  "blk": {
+                                    "body": {
+                                      "seq": {
+                                        "stmts": [
+                                          {
+                                            "app": {
+                                              "nam": {
+                                                "nam": {
+                                                  "val": "print"
+                                                }
+                                              },
+                                              "args": [
+                                                {
+                                                  "lit": {
+                                                    "val": "\"{} is positive\""
+                                                  }
+                                                },
+                                                {
+                                                  "nam": {
+                                                    "val": "n"
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          }
+                                        ]
+                                      }
+                                    }
+                                  }
+                                },
+                                "alt": {
+                                  "blk": {
+                                    "body": {
+                                      "seq": {
+                                        "stmts": [
+                                          {
+                                            "app": {
+                                              "nam": {
+                                                "nam": {
+                                                  "val": "print"
+                                                }
+                                              },
+                                              "args": [
+                                                {
+                                                  "lit": {
+                                                    "val": "\"{} is zero\""
+                                                  }
+                                                },
+                                                {
+                                                  "nam": {
+                                                    "val": "n"
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          }
+                                        ]
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "arith": {
+                            "sym": "+",
+                            "first": {
+                              "lit": {
+                                "val": "1"
+                              }
+                            },
+                            "second": {
+                              "lit": {
+                                "val": "2"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "comp": {
+                            "sym": "==",
+                            "first": {
+                              "lit": {
+                                "val": "true"
+                              }
+                            },
+                            "second": {
+                              "lit": {
+                                "val": "false"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "comp": {
+                            "sym": ">",
+                            "first": {
+                              "lit": {
+                                "val": "3"
+                              }
+                            },
+                            "second": {
+                              "lit": {
+                                "val": "2"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "comp": {
+                            "sym": "==",
+                            "first": {
+                              "arith": {
+                                "sym": "+",
+                                "first": {
+                                  "lit": {
+                                    "val": "1"
+                                  }
+                                },
+                                "second": {
+                                  "lit": {
+                                    "val": "2"
+                                  }
+                                }
+                              }
+                            },
+                            "second": {
+                              "arith": {
+                                "sym": "*",
+                                "first": {
+                                  "lit": {
+                                    "val": "3"
+                                  }
+                                },
+                                "second": {
+                                  "lit": {
+                                    "val": "12"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "logic": {
+                            "sym": "&&",
+                            "first": {
+                              "comp": {
+                                "sym": ">",
+                                "first": {
+                                  "lit": {
+                                    "val": "3"
+                                  }
+                                },
+                                "second": {
+                                  "lit": {
+                                    "val": "2"
+                                  }
+                                }
+                              }
+                            },
+                            "second": {
+                              "comp": {
+                                "sym": "<",
+                                "first": {
+                                  "arith": {
+                                    "sym": "+",
+                                    "first": {
+                                      "lit": {
+                                        "val": "1"
+                                      }
+                                    },
+                                    "second": {
+                                      "lit": {
+                                        "val": "2"
+                                      }
+                                    }
+                                  }
+                                },
+                                "second": {
+                                  "lit": {
+                                    "val": "1"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "assign": {
+                            "is_mut": false,
+                            "nam": "x",
+                            "val": {
+                              "lit": {
+                                "val": "1"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "assign": {
+                            "is_mut": true,
+                            "nam": "y",
+                            "val": {
+                              "lit": {
+                                "val": "2"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "assign": {
+                            "is_mut": false,
+                            "nam": "b",
+                            "val": {
+                              "lit": {
+                                "val": "3_i32"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "lit": {
+                            "val": "\"hello\""
+                          }
+                        },
+                        {
+                          "lit": {
+                            "val": "'a'"
+                          }
+                        },
+                        {
+                          "lit": {
+                            "val": "1"
+                          }
+                        },
+                        {
+                          "lit": {
+                            "val": "3.14"
+                          }
+                        },
+                        {
+                          "lit": {
+                            "val": "true"
+                          }
+                        },
+                        {
+                          "lit": {
+                            "val": "123u32"
+                          }
+                        },
+                        {
+                          "lit": {
+                            "val": "123_u32"
+                          }
+                        },
+                        {
+                          "assign": {
+                            "is_mut": true,
+                            "nam": "a",
+                            "val": {
+                              "lit": {
+                                "val": "0"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "while": {
+                            "pred": {
+                              "comp": {
+                                "sym": "<",
+                                "first": {
+                                  "nam": {
+                                    "val": "a"
+                                  }
+                                },
+                                "second": {
+                                  "lit": {
+                                    "val": "10"
+                                  }
+                                }
+                              }
+                            },
+                            "body": {
+                              "blk": {
+                                "body": {
+                                  "seq": {
+                                    "stmts": [
+                                      {
+                                        "compound_assign": {
+                                          "sym": "+=",
+                                          "first": {
+                                            "nam": {
+                                              "val": "a"
+                                            }
+                                          },
+                                          "second": {
+                                            "lit": {
+                                              "val": "1"
+                                            }
+                                          }
+                                        }
+                                      }
+                                    ]
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "nam": {
+                            "val": "a"
+                          }
+                        },
+                        {
+                          "nam": {
+                            "val": "foo"
+                          }
+                        },
+                        {
+                          "question": {
+                            "sym": "?",
+                            "first": {
+                              "nam": {
+                                "val": "a"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "borrow": {
+                            "sym": "&",
+                            "first": {
+                              "nam": {
+                                "val": "x"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "borrow": {
+                            "sym": "&&",
+                            "first": {
+                              "nam": {
+                                "val": "y"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "borrow mut": {
+                            "sym": "&",
+                            "first": {
+                              "nam": {
+                                "val": "x"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "borrow mut": {
+                            "sym": "&&",
+                            "first": {
+                              "nam": {
+                                "val": "y"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "deref": {
+                            "sym": "*",
+                            "first": {
+                              "nam": {
+                                "val": "x"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "neg": {
+                            "sym": "!",
+                            "first": {
+                              "lit": {
+                                "val": "true"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "neg": {
+                            "sym": "-",
+                            "first": {
+                              "lit": {
+                                "val": "1"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "assign": {
+                            "is_mut": true,
+                            "nam": "a",
+                            "val": {
+                              "lit": {
+                                "val": "0"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "while": {
+                            "pred": {
+                              "comp": {
+                                "sym": "<",
+                                "first": {
+                                  "nam": {
+                                    "val": "a"
+                                  }
+                                },
+                                "second": {
+                                  "lit": {
+                                    "val": "10"
+                                  }
+                                }
+                              }
+                            },
+                            "body": {
+                              "blk": {
+                                "body": {
+                                  "seq": {
+                                    "stmts": [
+                                      {
+                                        "cond": {
+                                          "pred": {
+                                            "comp": {
+                                              "sym": "==",
+                                              "first": {
+                                                "arith": {
+                                                  "sym": "%",
+                                                  "first": {
+                                                    "nam": {
+                                                      "val": "a"
+                                                    }
+                                                  },
+                                                  "second": {
+                                                    "lit": {
+                                                      "val": "2"
+                                                    }
+                                                  }
+                                                }
+                                              },
+                                              "second": {
+                                                "lit": {
+                                                  "val": "1"
+                                                }
+                                              }
+                                            }
+                                          },
+                                          "cons": {
+                                            "blk": {
+                                              "body": {
+                                                "seq": {
+                                                  "stmts": [
+                                                    {
+                                                      "break": {
+                                                        "body": null
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              }
+                                            }
+                                          },
+                                          "alt": null
+                                        }
+                                      },
+                                      {
+                                        "compound_assign": {
+                                          "sym": "+=",
+                                          "first": {
+                                            "nam": {
+                                              "val": "a"
+                                            }
+                                          },
+                                          "second": {
+                                            "lit": {
+                                              "val": "1"
+                                            }
+                                          }
+                                        }
+                                      }
+                                    ]
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "assign": {
+                            "sym": "=",
+                            "first": {
+                              "nam": {
+                                "val": "a"
+                              }
+                            },
+                            "second": {
+                              "lit": {
+                                "val": "0"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "while": {
+                            "pred": {
+                              "comp": {
+                                "sym": "<",
+                                "first": {
+                                  "nam": {
+                                    "val": "a"
+                                  }
+                                },
+                                "second": {
+                                  "lit": {
+                                    "val": "10"
+                                  }
+                                }
+                              }
+                            },
+                            "body": {
+                              "blk": {
+                                "body": {
+                                  "seq": {
+                                    "stmts": [
+                                      {
+                                        "cond": {
+                                          "pred": {
+                                            "comp": {
+                                              "sym": "==",
+                                              "first": {
+                                                "arith": {
+                                                  "sym": "%",
+                                                  "first": {
+                                                    "nam": {
+                                                      "val": "a"
+                                                    }
+                                                  },
+                                                  "second": {
+                                                    "lit": {
+                                                      "val": "2"
+                                                    }
+                                                  }
+                                                }
+                                              },
+                                              "second": {
+                                                "lit": {
+                                                  "val": "1"
+                                                }
+                                              }
+                                            }
+                                          },
+                                          "cons": {
+                                            "blk": {
+                                              "body": {
+                                                "seq": {
+                                                  "stmts": [
+                                                    {
+                                                      "continue": {
+                                                        "body": null
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              }
+                                            }
+                                          },
+                                          "alt": null
+                                        }
+                                      },
+                                      {
+                                        "compound_assign": {
+                                          "sym": "+=",
+                                          "first": {
+                                            "nam": {
+                                              "val": "a"
+                                            }
+                                          },
+                                          "second": {
+                                            "lit": {
+                                              "val": "1"
+                                            }
+                                          }
+                                        }
+                                      }
+                                    ]
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "return": {
+                            "body": {
+                              "nam": {
+                                "val": "a"
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          ""
+        ]
+      }
+    }
   }
 }

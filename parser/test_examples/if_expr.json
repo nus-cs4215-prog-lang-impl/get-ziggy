@@ -1,136 +1,169 @@
 {
-  "tag": "blk",
-  "body": {
-    "tag": "seq",
-    "stmts": [
-      {
-        "tag": "fun",
-        "nam": "main",
-        "params": [],
-        "body": {
-          "tag": "blk",
-          "body": {
-            "tag": "seq",
-            "stmts": [
-              {
-                "tag": "assign",
-                "is_mut": false,
-                "nam": "n",
-                "val": {
-                  "tag": "lit",
-                  "val": "5"
-                }
-              },
-              {
-                "tag": "cond",
-                "pred": {
-                  "tag": "comp",
-                  "sym": "<",
-                  "first": {
-                    "tag": "nam",
-                    "val": "n"
-                  },
-                  "second": {
-                    "tag": "lit",
-                    "val": "0"
-                  }
-                },
-                "cons": {
-                  "tag": "blk",
+  "blk": {
+    "body": {
+      "seq": {
+        "stmts": [
+          {
+            "fun": {
+              "nam": "main",
+              "params": [],
+              "body": {
+                "blk": {
                   "body": {
-                    "tag": "seq",
-                    "stmts": [
-                      {
-                        "tag": "app",
-                        "nam": {
-                          "tag": "nam",
-                          "val": "print"
-                        },
-                        "args": [
-                          {
-                            "tag": "lit",
-                            "val": "\"{} is negative\""
-                          },
-                          {
-                            "tag": "nam",
-                            "val": "n"
+                    "seq": {
+                      "stmts": [
+                        {
+                          "assign": {
+                            "is_mut": false,
+                            "nam": "n",
+                            "val": {
+                              "lit": {
+                                "val": "5"
+                              }
+                            }
                           }
-                        ]
-                      }
-                    ]
-                  }
-                },
-                "alt": {
-                  "tag": "cond",
-                  "pred": {
-                    "tag": "comp",
-                    "sym": ">",
-                    "first": {
-                      "tag": "nam",
-                      "val": "n"
-                    },
-                    "second": {
-                      "tag": "lit",
-                      "val": "0"
-                    }
-                  },
-                  "cons": {
-                    "tag": "blk",
-                    "body": {
-                      "tag": "seq",
-                      "stmts": [
+                        },
                         {
-                          "tag": "app",
-                          "nam": {
-                            "tag": "nam",
-                            "val": "print"
-                          },
-                          "args": [
-                            {
-                              "tag": "lit",
-                              "val": "\"{} is positive\""
+                          "cond": {
+                            "pred": {
+                              "comp": {
+                                "sym": "<",
+                                "first": {
+                                  "nam": {
+                                    "val": "n"
+                                  }
+                                },
+                                "second": {
+                                  "lit": {
+                                    "val": "0"
+                                  }
+                                }
+                              }
                             },
-                            {
-                              "tag": "nam",
-                              "val": "n"
-                            }
-                          ]
-                        }
-                      ]
-                    }
-                  },
-                  "alt": {
-                    "tag": "blk",
-                    "body": {
-                      "tag": "seq",
-                      "stmts": [
-                        {
-                          "tag": "app",
-                          "nam": {
-                            "tag": "nam",
-                            "val": "print"
-                          },
-                          "args": [
-                            {
-                              "tag": "lit",
-                              "val": "\"{} is zero\""
+                            "cons": {
+                              "blk": {
+                                "body": {
+                                  "seq": {
+                                    "stmts": [
+                                      {
+                                        "app": {
+                                          "nam": {
+                                            "nam": {
+                                              "val": "print"
+                                            }
+                                          },
+                                          "args": [
+                                            {
+                                              "lit": {
+                                                "val": "\"{} is negative\""
+                                              }
+                                            },
+                                            {
+                                              "nam": {
+                                                "val": "n"
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    ]
+                                  }
+                                }
+                              }
                             },
-                            {
-                              "tag": "nam",
-                              "val": "n"
+                            "alt": {
+                              "cond": {
+                                "pred": {
+                                  "comp": {
+                                    "sym": ">",
+                                    "first": {
+                                      "nam": {
+                                        "val": "n"
+                                      }
+                                    },
+                                    "second": {
+                                      "lit": {
+                                        "val": "0"
+                                      }
+                                    }
+                                  }
+                                },
+                                "cons": {
+                                  "blk": {
+                                    "body": {
+                                      "seq": {
+                                        "stmts": [
+                                          {
+                                            "app": {
+                                              "nam": {
+                                                "nam": {
+                                                  "val": "print"
+                                                }
+                                              },
+                                              "args": [
+                                                {
+                                                  "lit": {
+                                                    "val": "\"{} is positive\""
+                                                  }
+                                                },
+                                                {
+                                                  "nam": {
+                                                    "val": "n"
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          }
+                                        ]
+                                      }
+                                    }
+                                  }
+                                },
+                                "alt": {
+                                  "blk": {
+                                    "body": {
+                                      "seq": {
+                                        "stmts": [
+                                          {
+                                            "app": {
+                                              "nam": {
+                                                "nam": {
+                                                  "val": "print"
+                                                }
+                                              },
+                                              "args": [
+                                                {
+                                                  "lit": {
+                                                    "val": "\"{} is zero\""
+                                                  }
+                                                },
+                                                {
+                                                  "nam": {
+                                                    "val": "n"
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          }
+                                        ]
+                                      }
+                                    }
+                                  }
+                                }
+                              }
                             }
-                          ]
+                          }
                         }
                       ]
                     }
                   }
                 }
               }
-            ]
-          }
-        }
-      },
-      ""
-    ]
+            }
+          },
+          ""
+        ]
+      }
+    }
   }
 }
