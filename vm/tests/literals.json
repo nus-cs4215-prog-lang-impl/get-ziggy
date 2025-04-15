@@ -4,8 +4,52 @@
       "seq": {
         "stmts": [
           {
-            "lit": {
-              "val": "hello"
+            "fun": {
+              "nam": "main",
+              "params": [],
+              "return_type": null,
+              "body": {
+                "seq": {
+                  "stmts": [
+                    {
+                      "lit": {
+                        "val": "\"hello\"",
+                        "type_name": "String"
+                      }
+                    },
+                    {
+                      "lit": {
+                        "val": "'a'",
+                        "type_name": "String"
+                      }
+                    },
+                    {
+                      "lit": {
+                        "val": "1",
+                        "type_name": "i32"
+                      }
+                    },
+                    {
+                      "lit": {
+                        "val": "3.14",
+                        "type_name": "f64"
+                      }
+                    },
+                    {
+                      "lit": {
+                        "val": "true",
+                        "type_name": "bool"
+                      }
+                    },
+                    {
+                      "lit": {
+                        "val": "123",
+                        "type_name": "u32"
+                      }
+                    }
+                  ]
+                }
+              }
             }
           }
         ]

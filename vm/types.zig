@@ -5,26 +5,38 @@ const json = std.json;
 // by using PascalCase for the Rust types
 pub const TypeName = enum {
     i32,
-    f32,
+    i64,
+    u32,
+    u64,
+    f64,
     String,
+    Bool,
     Undefined,
 
-    pub fn jsonStringify(self: BorrowOperator, writer: anytype) !void {
+    pub fn jsonStringify(self: TypeName, writer: anytype) !void {
         try writer.write(switch (self) {
             .i32 => "i32",
-            .f32 => "f32",
+            .u32 => "u32",
+            .i64 => "i64",
+            .u64 => "u64",
+            .f64 => "f64",
             .String => "String",
+            .Bool => "bool",
             .Undefined => "undefined",
         });
     }
 
-    pub fn jsonParse(allocator: std.mem.Allocator, value: *json.Scanner, options: json.ParseOptions) !BorrowAttr {
+    pub fn jsonParse(allocator: std.mem.Allocator, value: *json.Scanner, options: json.ParseOptions) !TypeName {
         const val = try json.innerParse(json.Value, allocator, value, options);
         const str = val.string;
         // std.debug.print("val: {}\n", .{val});
         if (std.mem.eql(u8, str, "i32")) return .i32;
-        if (std.mem.eql(u8, str, "f32")) return .f32;
+        if (std.mem.eql(u8, str, "u32")) return .u32;
+        if (std.mem.eql(u8, str, "i64")) return .i64;
+        if (std.mem.eql(u8, str, "u64")) return .u64;
+        if (std.mem.eql(u8, str, "f64")) return .f64;
         if (std.mem.eql(u8, str, "String")) return .String;
+        if (std.mem.eql(u8, str, "bool")) return .Bool;
         if (std.mem.eql(u8, str, "undefined")) return .Undefined;
         return error.InvalidEnumTag;
     }
@@ -47,7 +59,7 @@ pub const BorrowOperator = enum {
         });
     }
 
-    pub fn jsonParse(allocator: std.mem.Allocator, value: *json.Scanner, options: json.ParseOptions) !BorrowAttr {
+    pub fn jsonParse(allocator: std.mem.Allocator, value: *json.Scanner, options: json.ParseOptions) !BorrowOperator {
         const val = try json.innerParse(json.Value, allocator, value, options);
         const str = val.string;
         // std.debug.print("val: {}\n", .{val});
@@ -66,7 +78,7 @@ pub const BorrowAttr = enum {
         });
     }
 
-    pub fn jsonParse(allocator: std.mem.Allocator, value: *json.Scanner, options: json.ParseOptions) !BorrowOperator {
+    pub fn jsonParse(allocator: std.mem.Allocator, value: *json.Scanner, options: json.ParseOptions) !BorrowAttr {
         const val = try json.innerParse(json.Value, allocator, value, options);
         const str = val.string;
         // std.debug.print("val: {}\n", .{val});
@@ -178,7 +190,7 @@ pub const UnaryOperator = union(enum) {
 
 pub const UnaryOperation = struct {
     sym: UnaryOperator,
-    body: *JsonAstNode,
+    first: *JsonAstNode,
 };
 
 pub const CompOperator = enum {
@@ -477,7 +489,7 @@ pub const JsonAstNode = union(enum) {
     question: UnaryOperation,
     seq: struct { stmts: []*JsonAstNode },
     blk: struct { body: *JsonAstNode },
-    assign: struct { nam: []const u8, value: *JsonAstNode, is_mut: bool },
+    assign: struct { nam: []const u8, val: *JsonAstNode, is_mut: bool },
     reassign: BinaryOperation,
     compound_assign: BinaryOperation,
     type_cast: BinaryOperation,

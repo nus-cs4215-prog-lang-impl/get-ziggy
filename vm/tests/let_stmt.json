@@ -7,52 +7,84 @@
             "fun": {
               "nam": "main",
               "params": [],
+              "return_type": null,
               "body": {
-                "blk": {
-                  "body": {
-                    "seq": {
-                      "stmts": [
-                        {
-                          "let": {
-                            "is_mut": false,
-                            "nam": "x",
-                            "val": {
-                              "lit": {
-                                "val": "1"
-                              }
-                            }
-                          }
-                        },
-                        {
-                          "let": {
-                            "is_mut": true,
-                            "nam": "y",
-                            "val": {
-                              "lit": {
-                                "val": "2"
-                              }
-                            }
-                          }
-                        },
-                        {
-                          "let": {
-                            "is_mut": false,
-                            "nam": "b",
-                            "val": {
-                              "lit": {
-                                "val": "3_i32"
-                              }
-                            }
+                "seq": {
+                  "stmts": [
+                    {
+                      "assign": {
+                        "is_mut": false,
+                        "type_name": null,
+                        "nam": "x",
+                        "val": {
+                          "lit": {
+                            "val": "1",
+                            "type_name": "i32"
                           }
                         }
-                      ]
+                      }
+                    },
+                    {
+                      "assign": {
+                        "is_mut": true,
+                        "type_name": null,
+                        "nam": "y",
+                        "val": {
+                          "lit": {
+                            "val": "2",
+                            "type_name": "i32"
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "assign": {
+                        "is_mut": false,
+                        "type_name": "i32",
+                        "nam": "a",
+                        "val": {
+                          "lit": {
+                            "val": "3",
+                            "type_name": "i32"
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "assign": {
+                        "is_mut": false,
+                        "type_name": null,
+                        "nam": "b",
+                        "val": {
+                          "lit": {
+                            "val": "3",
+                            "type_name": "i64"
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "lit": {
+                        "val": "\"5\"",
+                        "type_name": "String"
+                      }
+                    },
+                    {
+                      "neg": {
+                        "sym": "-",
+                        "first": {
+                          "lit": {
+                            "val": "3",
+                            "type_name": "i32"
+                          }
+                        }
+                      }
                     }
-                  }
+                  ]
                 }
               }
             }
-          },
-          ""
+          }
         ]
       }
     }

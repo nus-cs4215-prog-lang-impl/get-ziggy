@@ -2,7 +2,8 @@ const std = @import("std");
 const Allocator = std.mem.Allocator;
 const types = @import("types.zig");
 
-const Value = types.Value;
+const LiteralVal = types.LiteralVal; // Use LiteralVal
+const TypeName = types.TypeName; // Import TypeName
 const UnaryOperator = types.UnaryOperator;
 const BinaryOperator = types.BinaryOperator;
 const LogicalOperator = types.LogicalOperator;
@@ -33,6 +34,9 @@ pub const Compiler = struct {
                     for (scope.locals) |local| self.alloc.free(local);
                     self.alloc.free(scope.locals); // Free the outer slice too
                 },
+                // Deallocate LiteralVal string if needed (assuming it might be duped)
+                // TODO: Confirm if LiteralVal.val needs freeing. Assuming yes for now if duped.
+                .Ldc => |lit| self.alloc.free(lit.val),
                 //.Ldf => |f| {
                 //    // Assuming Param names are also allocated strings that need freeing
                 //    // If Param names point to original AST strings, this is not needed.
@@ -56,6 +60,8 @@ pub const Compiler = struct {
         switch (instruction) {
             .Ld => |name| owned_instruction = .{ .Ld = try self.alloc.dupe(u8, name) },
             .Assign => |name| owned_instruction = .{ .Assign = try self.alloc.dupe(u8, name) },
+            // Also dupe the string inside LiteralVal for Ldc
+            .Ldc => |lit| owned_instruction = .{ .Ldc = .{ .val = try self.alloc.dupe(u8, lit.val), .type_name = lit.type_name } },
             // TODO: Handle EnterScope and Ldf if their strings need allocation/duplication
             // This depends on whether the input AST strings are guaranteed to live long enough.
             // For now, assume they do, but duplication might be safer.
@@ -191,6 +197,8 @@ pub const Compiler = struct {
             // For now, let's treat it as doing nothing, stack remains unchanged.
             // If the sequence is the *last* thing in a block/program,
             // the lack of a value might be handled by the caller context.
+            // Let's push Undefined here explicitly for empty sequence.
+            try self.addInstr(.{ .Ldc = .{ .val = "undefined", .type_name = .Undefined } });
             return;
         }
 
@@ -321,36 +329,49 @@ pub const Compiler = struct {
     // TODO: When all cases are implemented, we should not need CompileErrors anymore?
     pub fn compile(self: *Compiler, node: *const JsonAstNode) CompileErrors!void {
         switch (node.*) {
-            .lit => |lit_data| try self.addInstr(.{ .Ldc = lit_data.val }),
+            // Use lit_data directly for Ldc
+            .lit => |lit_data| try self.addInstr(.{ .Ldc = lit_data }),
             .nam => |name| try self.addInstr(.{ .Ld = name }),
 
             // Binary Operations
             .arith => |op_data| try self.compileBinaryOp(op_data.first, op_data.second, op_data.sym),
             .reassign => |op_data| {
                 try self.compile(op_data.second); // Compile the value first
-                try self.addInstr(.{ .Assign = op_data.first.nam });
+                // Assuming op_data.first is a .nam node for reassignment target
+                // TODO: Handle more complex assignment targets (e.g., struct fields) if needed
+                if (op_data.first.* == .nam) {
+                    try self.addInstr(.{ .Assign = op_data.first.nam });
+                } else {
+                    std.debug.print("Compilation error: Invalid reassignment target\n", .{});
+                    return CompileErrors.UnimplementedAstNode; // Or a more specific error
+                }
             },
             .compound_assign => |op_data| {
                 // e.g., x += 5 translates to: Ld x, Ldc 5, Binop Add, Assign x
-
-                const name = op_data.first.nam;
-                try self.addInstr(.{ .Ld = name }); // Load current value
-                try self.compile(op_data.second); // Compile the right-hand side value
-                // Convert compound operator to the corresponding basic binary operator
-                const basic_op = switch (op_data.sym.compound_assign) {
-                    .AddAssign => BinaryOperator{ .arith = .Add },
-                    .SubAssign => BinaryOperator{ .arith = .Sub },
-                    .MulAssign => BinaryOperator{ .arith = .Mul },
-                    .DivAssign => BinaryOperator{ .arith = .Div },
-                    .ModAssign => BinaryOperator{ .arith = .Mod },
-                    .BitAndAssign => BinaryOperator{ .arith = .Bitand },
-                    .BitOrAssign => BinaryOperator{ .arith = .Bitor },
-                    .BitXorAssign => BinaryOperator{ .arith = .Bitxor },
-                    .ShlAssign => BinaryOperator{ .arith = .Shl },
-                    .ShrAssign => BinaryOperator{ .arith = .Shr },
-                };
-                try self.addInstr(.{ .Binop = basic_op }); // Perform the operation
-                try self.addInstr(.{ .Assign = name }); // Assign the result back
+                // Assuming op_data.first is a .nam node for assignment target
+                if (op_data.first.* == .nam) {
+                    const name = op_data.first.nam;
+                    try self.addInstr(.{ .Ld = name }); // Load current value
+                    try self.compile(op_data.second); // Compile the right-hand side value
+                    // Convert compound operator to the corresponding basic binary operator
+                    const basic_op = switch (op_data.sym.compound_assign) {
+                        .AddAssign => BinaryOperator{ .arith = .Add },
+                        .SubAssign => BinaryOperator{ .arith = .Sub },
+                        .MulAssign => BinaryOperator{ .arith = .Mul },
+                        .DivAssign => BinaryOperator{ .arith = .Div },
+                        .ModAssign => BinaryOperator{ .arith = .Mod },
+                        .BitAndAssign => BinaryOperator{ .arith = .Bitand },
+                        .BitOrAssign => BinaryOperator{ .arith = .Bitor },
+                        .BitXorAssign => BinaryOperator{ .arith = .Bitxor },
+                        .ShlAssign => BinaryOperator{ .arith = .Shl },
+                        .ShrAssign => BinaryOperator{ .arith = .Shr },
+                    };
+                    try self.addInstr(.{ .Binop = basic_op }); // Perform the operation
+                    try self.addInstr(.{ .Assign = name }); // Assign the result back
+                } else {
+                    std.debug.print("Compilation error: Invalid compound assignment target\n", .{});
+                    return CompileErrors.UnimplementedAstNode; // Or a more specific error
+                }
             },
             .type_cast => |op_data| {
                 // Compile the expression being casted
@@ -471,9 +492,8 @@ pub const Compiler = struct {
                 // 8. Patch Jof to jump here
                 self.patchJump(jof_idx, after_loop_addr);
                 // After the loop finishes (condition becomes false), we need a value on the stack.
-                // Loops typically evaluate to 'undefined' or equivalent. Let's push Undefined.
-                // TODO: Confirm the expected return value of a while loop.
-                try self.addInstr(.{ .Ldc = .Undefined });
+                // Loops typically evaluate to 'undefined' or equivalent. Push Undefined using LiteralVal.
+                try self.addInstr(.{ .Ldc = .{ .val = "undefined", .type_name = .Undefined } });
             },
 
             // else => {
@@ -499,7 +519,8 @@ pub const Compiler = struct {
         for (instructions, 0..) |instr, i| {
             std.debug.print("{d}: ", .{i});
             switch (instr) {
-                .Ldc => |val| std.debug.print("Ldc({any})\n", .{val}),
+                // Update Ldc printing
+                .Ldc => |val| std.debug.print("Ldc(val: \"{s}\", type: {any})\n", .{ val.val, val.type_name }),
                 .Ld => |name| std.debug.print("Ld(\"{s}\")\n", .{name}),
                 .Assign => |name| std.debug.print("Assign(\"{s}\")\n", .{name}),
                 .Unop => |op| std.debug.print("Unop({any})\n", .{op}),
@@ -543,9 +564,10 @@ pub fn main() !void {
     var compiler = Compiler.init(allocator);
     defer compiler.deinit();
 
-    // Example AST: let x = 1 + 2; x using JsonAstNode
-    var one = JsonAstNode{ .lit = .{ .val = .{ .Int = 1 } } };
-    var two = JsonAstNode{ .lit = .{ .val = .{ .Int = 2 } } };
+    // Example AST: let x = 1 + 2; x using JsonAstNode with LiteralVal
+    // Assuming default integer type is i32
+    var one = JsonAstNode{ .lit = .{ .val = "1", .type_name = .i32 } };
+    var two = JsonAstNode{ .lit = .{ .val = "2", .type_name = .i32 } };
     var add_expr = JsonAstNode{ .arith = .{ .sym = .{ .arith = .Add }, .first = &one, .second = &two } };
     var var_decl = JsonAstNode{ .assign = .{ .nam = "x", .value = &add_expr, .is_mut = false } };
     var load_x = JsonAstNode{ .nam = "x" };
