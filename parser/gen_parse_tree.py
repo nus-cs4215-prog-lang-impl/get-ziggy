@@ -444,7 +444,7 @@ if __name__ == "__main__":
     if syntax_tree:
         # NOTE: if multple files with same name but diff dir are parsed then silent conflict
         out_filename = (args.f.split("/")[-1]).split(".")[0]
-        with open(f"../out_parse/{out_filename}.json", "w", encoding="utf-8") as f:
+        with open(f"/app/out_parse/{out_filename}.json", "w", encoding="utf-8") as f:
             # print(syntax_tree)
             json.dump(syntax_tree, f, indent=2)
     else:
