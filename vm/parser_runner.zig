@@ -1,16 +1,15 @@
 const std = @import("std");
-const types = @import("types.zig");
+const jsonAst = @import("types.zig").JsonAstNode;
+const json = std.json;
 
 pub const ParserRunner = struct {
     allocator: std.mem.Allocator,
-    source_file: []const u8,
-    source_path: []const u8,
+    ast: ?json.Parsed(jsonAst),
 
-    pub fn init(source_file: []const u8, source_path: []const u8, allocator: std.mem.Allocator) ParserRunner {
+    pub fn init(allocator: std.mem.Allocator) ParserRunner {
         return .{
             .allocator = allocator,
-            .source_file = source_file,
-            .source_path = source_path,
+            .ast = null,
         };
     }
 
@@ -18,7 +17,8 @@ pub const ParserRunner = struct {
         self.ast.deinit();
     }
 
-    pub fn runCommandAndParseJson(self: *ParserRunner) !void {
+    pub fn parseRustParseJson(self: *ParserRunner, source_file: []const u8, source_path: []const u8) !jsonAst {
+        _ = source_path;
         // const in_path = try std.mem.concat(self.allocator, u8, &[_][]const u8{ self.source_path, self.source_file, ".rs" });
         // defer self.allocator.free(in_path);
         //
@@ -29,21 +29,27 @@ pub const ParserRunner = struct {
         // // 2. Wait for child process to finish
         // _ = try child.wait();
 
-        const out_path = try std.mem.concat(self.allocator, u8, &[_][]const u8{ "/app/out_parse/", self.source_file, ".json" });
+        const out_path = try std.mem.concat(self.allocator, u8, &[_][]const u8{ "/app/out_parse/", source_file, ".json" });
         defer self.allocator.free(out_path);
 
         const json_bytes = try std.fs.cwd().readFileAlloc(self.allocator, out_path, 1024 * 1024); // Limit file size
         defer self.allocator.free(json_bytes);
-        const r = try std.json.parseFromSlice(types.JsonAstNode, self.allocator, json_bytes, .{ .ignore_unknown_fields = true });
-        r.deinit();
+        self.ast = try json.parseFromSlice(jsonAst, self.allocator, json_bytes, .{ .ignore_unknown_fields = true });
 
-        std.debug.print("hi\n", .{});
+        return self.ast.?.value;
     }
 };
 
-test "test echo" {
+test "test basic run python parser and read json ast" {
     const alloc = std.testing.allocator;
-    var pr = ParserRunner.init("literals", "/app/our_examples/", alloc);
 
-    try pr.runCommandAndParseJson();
+    var pr = ParserRunner.init(alloc);
+    const jsonNodes = try pr.parseRustParseJson("literals", "/app/our_examples/");
+    defer pr.deinit();
+
+    var compiler = @import("compiler.zig").Compiler.init(alloc);
+    defer compiler.deinit();
+
+    compiler.compileProgram(&jsonNodes);
+    compiler.printCompiledMicrocode();
 }
