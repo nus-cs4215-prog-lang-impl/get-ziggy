@@ -172,7 +172,7 @@ def trim_expr(node, rule_names):
             return {
                 f"{node.getChild(0)
                 .getSymbol()
-                .text}_stmt": {
+                .text}_statement": {
                     "body": (
                         None
                         if node.getChildCount() != 2
@@ -264,10 +264,10 @@ def trim_expr(node, rule_names):
                 pass # Or raise an error, or assign a default type
         elif val.isdigit():
             type_name = "i32" # Default integer type
+        else:
+            type_name = "String"
 
-        if type_name is None:
-            print(f"Warning: Could not determine type for literal: {val}")
-            return {"lit": {"val": val, "type_name": type_name}}
+        return {"lit": {"val": val, "type_name": type_name}}
 
 
         return {"lit": {"val": val, "type_name": type_name}}
@@ -298,7 +298,7 @@ def trim_expr(node, rule_names):
     elif rule_name == "loopExpression":
         loop = node.getChild(0)
         return {
-            "while": {
+            "while_loop": {
                 "pred": trim_expr(loop.getChild(1), rule_names),
                 "body": trim_tree(loop.getChild(2), rule_names),
             }

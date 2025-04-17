@@ -18,16 +18,15 @@ pub const ParserRunner = struct {
     }
 
     pub fn parseRustParseJson(self: *ParserRunner, source_file: []const u8, source_path: []const u8) !jsonAst {
-        _ = source_path;
-        // const in_path = try std.mem.concat(self.allocator, u8, &[_][]const u8{ self.source_path, self.source_file, ".rs" });
-        // defer self.allocator.free(in_path);
-        //
-        // const cmd = &[_][]const u8{ "python", "/app/parser/gen_parse_tree.py", "-f", in_path };
-        //
-        // var child = std.process.Child.init(cmd, std.heap.page_allocator);
-        // try child.spawn();
-        // // 2. Wait for child process to finish
-        // _ = try child.wait();
+        const in_path = try std.mem.concat(self.allocator, u8, &[_][]const u8{ source_path, source_file, ".rs" });
+        defer self.allocator.free(in_path);
+
+        const cmd = &[_][]const u8{ "python", "/app/parser/gen_parse_tree.py", "-f", in_path };
+
+        var child = std.process.Child.init(cmd, std.heap.page_allocator);
+        try child.spawn();
+        // 2. Wait for child process to finish
+        _ = try child.wait();
 
         const out_path = try std.mem.concat(self.allocator, u8, &[_][]const u8{ "/app/out_parse/", source_file, ".json" });
         defer self.allocator.free(out_path);
@@ -44,7 +43,7 @@ test "test basic run python parser and read json ast" {
     const alloc = std.testing.allocator;
 
     var pr = ParserRunner.init(alloc);
-    const jsonNodes = try pr.parseRustParseJson("literals", "/app/our_examples/");
+    _ = try pr.parseRustParseJson("literals", "/app/our_examples/");
     defer pr.deinit();
 
     var compiler = @import("compiler.zig").Compiler.init(alloc);
