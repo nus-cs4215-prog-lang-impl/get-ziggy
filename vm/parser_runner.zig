@@ -13,8 +13,8 @@ pub const ParserRunner = struct {
         };
     }
 
-    pub fn deinit(self: *ParserRunner) !void {
-        self.ast.deinit();
+    pub fn deinit(self: *ParserRunner) void {
+        self.ast.?.deinit();
     }
 
     pub fn parseRustParseJson(self: *ParserRunner, source_file: []const u8, source_path: []const u8) !jsonAst {
@@ -50,6 +50,6 @@ test "test basic run python parser and read json ast" {
     var compiler = @import("compiler.zig").Compiler.init(alloc);
     defer compiler.deinit();
 
-    compiler.compileProgram(&jsonNodes);
-    compiler.printCompiledMicrocode();
+    try compiler.compileProgram(&jsonNodes);
+    try compiler.printCompiledMicrocode();
 }
