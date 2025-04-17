@@ -93,7 +93,7 @@ pub const Compiler = struct {
                 try self.scanNodeRecursive(op_data.second, locals);
             },
             .borrow, .borrow_mut, .deref, .neg, .question => |op_data| {
-                try self.scanNodeRecursive(op_data.body, locals);
+                try self.scanNodeRecursive(op_data.first, locals);
             },
             .seq => |seq_data| {
                 for (seq_data.stmts) |stmt| try self.scanNodeRecursive(stmt, locals);
@@ -106,7 +106,7 @@ pub const Compiler = struct {
                 // This is a variable declaration (let binding) - add its name
                 try locals.append(assign_data.nam);
                 // Also scan the value expression for nested declarations (though less common)
-                try self.scanNodeRecursive(assign_data.value, locals);
+                try self.scanNodeRecursive(assign_data.val, locals);
             },
             .cond => |cond_data| {
                 try self.scanNodeRecursive(cond_data.pred, locals);
@@ -186,8 +186,8 @@ pub const Compiler = struct {
         try self.addInstr(.{ .Binop = op });
     }
 
-    fn compileUnaryOp(self: *Compiler, body: *const JsonAstNode, op: UnaryOperator) CompileErrors!void {
-        try self.compile(body);
+    fn compileUnaryOp(self: *Compiler, first: *const JsonAstNode, op: UnaryOperator) CompileErrors!void {
+        try self.compile(first);
         try self.addInstr(.{ .Unop = op });
     }
 
@@ -385,17 +385,17 @@ pub const Compiler = struct {
             },
 
             // Unary Operations
-            .borrow => |op_data| try self.compileUnaryOp(op_data.body, op_data.sym),
-            .borrow_mut => |op_data| try self.compileUnaryOp(op_data.body, op_data.sym),
-            .deref => |op_data| try self.compileUnaryOp(op_data.body, op_data.sym),
-            .neg => |op_data| try self.compileUnaryOp(op_data.body, op_data.sym),
-            .question => |op_data| try self.compileUnaryOp(op_data.body, op_data.sym),
+            .borrow => |op_data| try self.compileUnaryOp(op_data.first, op_data.sym),
+            .borrow_mut => |op_data| try self.compileUnaryOp(op_data.first, op_data.sym),
+            .deref => |op_data| try self.compileUnaryOp(op_data.first, op_data.sym),
+            .neg => |op_data| try self.compileUnaryOp(op_data.first, op_data.sym),
+            .question => |op_data| try self.compileUnaryOp(op_data.first, op_data.sym),
 
             .seq => |seq_data| try self.compileSequence(seq_data.stmts),
             .blk => |blk_data| try self.compileBlock(blk_data.body),
 
             // Variable Declaration (let binding)
-            .assign => |assign_data| try self.compileVarDecl(assign_data.nam, assign_data.value),
+            .assign => |assign_data| try self.compileVarDecl(assign_data.nam, assign_data.val),
 
             // Control Flow & Functions
             .app => |app_data| {
