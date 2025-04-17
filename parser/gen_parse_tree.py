@@ -19,7 +19,7 @@ def parse_file(filepath):
     result = None
     try:
         tree = parser.crate()
-        # print(tree.toStringTree(parser.ruleNames))
+        print(tree.toStringTree(parser.ruleNames))
         result = trim_tree(tree, parser.ruleNames)
     except Exception as e:
         output.write("\n" * 2)
