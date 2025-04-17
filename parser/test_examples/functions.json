@@ -7,6 +7,7 @@
         "tag": "fun",
         "nam": "one",
         "params": [],
+        "return_type": null,
         "body": {
           "tag": "blk",
           "body": {
@@ -26,9 +27,10 @@
         "params": [
           {
             "nam": "a",
-            "type": null
+            "type": "u32"
           }
         ],
+        "return_type": null,
         "body": {
           "tag": "blk",
           "body": ""
@@ -40,13 +42,33 @@
         "params": [
           {
             "nam": "a",
-            "type": null
+            "type": "i32"
           },
           {
             "nam": "b",
-            "type": null
+            "type": "i32"
           }
         ],
+        "return_type": null,
+        "body": {
+          "tag": "blk",
+          "body": ""
+        }
+      },
+      {
+        "tag": "fun",
+        "nam": "foobar",
+        "params": [
+          {
+            "nam": "a",
+            "type": "i32"
+          },
+          {
+            "nam": "b",
+            "type": "i32"
+          }
+        ],
+        "return_type": "i32",
         "body": {
           "tag": "blk",
           "body": ""
@@ -56,6 +78,7 @@
         "tag": "fun",
         "nam": "main",
         "params": [],
+        "return_type": null,
         "body": {
           "tag": "blk",
           "body": {

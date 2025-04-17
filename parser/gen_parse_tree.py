@@ -55,9 +55,12 @@ def get_pattern_id(node, rule_names):
 def get_fn_params(node, rule_names):
     out = []
     for i in range(0, node.getChildCount(), 2):
-        param = node.getChild(i)
-        id = get_pattern_id(param.getChild(0), rule_names).getSymbol()
-        out.append({"nam": id.text, "type": param.getChild(2)})
+        param = node.getChild(i).getChild(0)
+        assert (
+            param.getChildCount() == 3
+        ), "Assertion: Function parameters must be explicitly typed (totalling in 3 items)"
+        id = get_pattern_id(param, rule_names).getSymbol()
+        out.append({"nam": id.text, "type_name": trim_type(param.getChild(2), rule_names)})
 
     return out
 
@@ -143,7 +146,7 @@ def expr_infix_operator(node):
     elif infix in type_cast:
         op_type = "typecast"
     elif infix in assign:
-        op_type = "assign"
+        op_type = "reassign"
     elif infix in compound_assign:
         op_type = "compound_assign"
     else:
@@ -167,9 +170,9 @@ def trim_expr(node, rule_names):
             0
         ).getSymbol().text in ["return", "break", "continue"]:
             return {
-                node.getChild(0)
+                f"{node.getChild(0)
                 .getSymbol()
-                .text: {
+                .text}_stmt": {
                     "body": (
                         None
                         if node.getChildCount() != 2
@@ -239,7 +242,35 @@ def trim_expr(node, rule_names):
         }
 
     elif rule_name == "literalExpression":
-        return {"lit": {"val": node.getChild(0).getSymbol().text}}
+        val = node.getChild(0).getSymbol().text
+        type_name = None
+
+        if val == "true" or val == "false":
+            type_name = "bool"
+        elif val.startswith('"') and val.endswith('"'):
+            type_name = "String"
+        elif val.startswith("'") and val.endswith("'"):
+            type_name = "String"
+        elif "_" in val:
+            parts = val.split("_", 1)
+            if len(parts) == 2 and parts[0]: # Ensure there's a value before '_'
+                val = parts[0]
+                type_name = parts[1]
+        elif "." in val:
+            try:
+                float(val) # Check if it's a valid float
+                type_name = "f64" # Default float type
+            except ValueError:
+                pass # Or raise an error, or assign a default type
+        elif val.isdigit():
+            type_name = "i32" # Default integer type
+
+        if type_name is None:
+            print(f"Warning: Could not determine type for literal: {val}")
+            return {"lit": {"val": val, "type_name": type_name}}
+
+
+        return {"lit": {"val": val, "type_name": type_name}}
 
     elif rule_name == "expressionWithBlock":
         # WARN: Circular recursion, BE CAREFUL!
@@ -278,6 +309,20 @@ def trim_expr(node, rule_names):
         )
 
 
+def trim_type(node, rule_names):
+    rule_name = rule_names[node.getRuleIndex()]
+
+    if rule_name == "type_":
+        while rule_name != "identifier":
+            assert node.getChildCount() == 1
+            node = node.getChild(0)
+            rule_name = rule_names[node.getRuleIndex()]
+        return node.getChild(0).getSymbol().text
+
+    else:
+        raise NotImplementedError(f"Assertion: Type:::{rule_name}:::not implemented")
+
+
 # TODO: deal with identifiers properly
 def trim_tree(node, rule_names):
     """
@@ -296,20 +341,25 @@ def trim_tree(node, rule_names):
     elif isinstance(node, ParserRuleContext):
         rule_name = rule_names[node.getRuleIndex()]
 
-        # TODO: return type
         if rule_name == "function_":
             fun_name = node.getChild(2).getChild(0).getSymbol().text
 
-            para_node = node.getChild(4)
-            if isinstance(para_node, TerminalNode):
-                params = []
-                body = trim_tree(node.getChild(5), rule_names)
-            else:
-                params = get_fn_params(para_node, rule_names)
-                body = trim_tree(node.getChild(6), rule_names)
+            params = []
+            rtn_type = None
+            body = None
+            for i in range(4, node.getChildCount()):
+                child = node.getChild(i)
+                if isinstance(child, TerminalNode):
+                    continue
+                rule = rule_names[child.getRuleIndex()]
+                if rule == "functionParameters":
+                    params = get_fn_params(child,rule_names)
+                elif rule == "functionReturnType":
+                    rtn_type = trim_type(child.getChild(1), rule_names)
+                elif rule == "blockExpression":
+                    body = trim_tree(child.getChild(1), rule_names)
 
-            return {"fun": {"nam": fun_name, "params": params, "body": body}}
-
+            return {"fun": {"nam": fun_name, "params": params, "return_type": rtn_type, "body": body}}
         elif rule_name == "blockExpression":
             return {"blk": {"body": trim_tree(node.getChild(1), rule_names)}}
 
@@ -334,7 +384,10 @@ def trim_tree(node, rule_names):
             return trim_expr(node, rule_names)
 
         elif rule_name == "letStatement":
-            assert node.getChildCount() == 5, "Assertion: Let statement has 5 children"
+            assert (
+                node.getChildCount() == 5 or node.getChildCount() == 7
+            ), "Assertion: Let statement must have 5 or 7 children"
+
             lhs_node = node.getChild(1).getChild(0).getChild(0)
             if isinstance(lhs_node.getChild(0), TerminalNode):
                 is_mut = True
@@ -343,10 +396,17 @@ def trim_tree(node, rule_names):
                 is_mut = False
                 nam = lhs_node.getChild(0).getChild(0).getSymbol().text
 
-            rhs_node = trim_tree(node.getChild(3), rule_names)
+            offset = 0
+            type_name = None
+            if node.getChildCount() == 7:
+                offset = 2
+                type_name = trim_type(node.getChild(3), rule_names)
+
+            rhs_node = trim_tree(node.getChild(offset + 3), rule_names)
             return {
                 "assign": {
                     "is_mut": is_mut,
+                    "type_name": type_name,
                     "nam": nam,
                     "val": rhs_node,
                 }
@@ -384,7 +444,7 @@ if __name__ == "__main__":
     if syntax_tree:
         # NOTE: if multple files with same name but diff dir are parsed then silent conflict
         out_filename = (args.f.split("/")[-1]).split(".")[0]
-        with open(f"../out_parse/{out_filename}.json", "w", encoding="utf-8") as f:
+        with open(f"/app/out_parse/{out_filename}.json", "w", encoding="utf-8") as f:
             # print(syntax_tree)
             json.dump(syntax_tree, f, indent=2)
     else:
@@ -396,6 +456,7 @@ if __name__ == "__main__":
 # NOTE: FOOTNOTE
 # - Operator precendence We don't impl
 # ---- We don't do it, cause the antlr parse tree is left to right recursive
+# ---- Also source doesn't do it either
 # (expression
 #     (expression (identifier y)) +
 #         (expression

@@ -7,6 +7,7 @@
         "tag": "fun",
         "nam": "one",
         "params": [],
+        "return_type": null,
         "body": {
           "tag": "blk",
           "body": {
@@ -26,9 +27,10 @@
         "params": [
           {
             "nam": "a",
-            "type": null
+            "type": "u32"
           }
         ],
+        "return_type": null,
         "body": {
           "tag": "blk",
           "body": ""
@@ -40,13 +42,14 @@
         "params": [
           {
             "nam": "a",
-            "type": null
+            "type": "i32"
           },
           {
             "nam": "b",
-            "type": null
+            "type": "i32"
           }
         ],
+        "return_type": null,
         "body": {
           "tag": "blk",
           "body": ""
@@ -56,6 +59,7 @@
         "tag": "fun",
         "nam": "main",
         "params": [],
+        "return_type": null,
         "body": {
           "tag": "blk",
           "body": {
@@ -131,7 +135,8 @@
                 "val": {
                   "tag": "lit",
                   "val": "5"
-                }
+                },
+                "type": null
               },
               {
                 "tag": "cond",
@@ -345,7 +350,8 @@
                 "val": {
                   "tag": "lit",
                   "val": "1"
-                }
+                },
+                "type": null
               },
               {
                 "tag": "assign",
@@ -354,7 +360,8 @@
                 "val": {
                   "tag": "lit",
                   "val": "2"
-                }
+                },
+                "type": null
               },
               {
                 "tag": "assign",
@@ -363,7 +370,8 @@
                 "val": {
                   "tag": "lit",
                   "val": "3_i32"
-                }
+                },
+                "type": null
               },
               {
                 "tag": "lit",
@@ -400,7 +408,8 @@
                 "val": {
                   "tag": "lit",
                   "val": "0"
-                }
+                },
+                "type": null
               },
               {
                 "tag": "while",
@@ -516,7 +525,8 @@
                 "val": {
                   "tag": "lit",
                   "val": "0"
-                }
+                },
+                "type": null
               },
               {
                 "tag": "while",
