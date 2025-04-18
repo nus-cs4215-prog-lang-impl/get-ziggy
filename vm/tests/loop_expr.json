@@ -1,0 +1,75 @@
+{
+  "blk": {
+    "body": {
+      "seq": {
+        "stmts": [
+          {
+            "fun": {
+              "nam": "main",
+              "params": [],
+              "return_type": null,
+              "body": {
+                "seq": {
+                  "stmts": [
+                    {
+                      "lit": {
+                        "val": "\"hello\"",
+                        "type_name": "String"
+                      }
+                    },
+                    {
+                      "while_loop": {
+                        "pred": {
+                          "comp": {
+                            "sym": "<",
+                            "first": {
+                              "nam": {
+                                "val": "a"
+                              }
+                            },
+                            "second": {
+                              "lit": {
+                                "val": "10",
+                                "type_name": "i32"
+                              }
+                            }
+                          }
+                        },
+                        "body": {
+                          "blk": {
+                            "body": {
+                              "seq": {
+                                "stmts": [
+                                  {
+                                    "compound_assign": {
+                                      "sym": "+=",
+                                      "first": {
+                                        "nam": {
+                                          "val": "a"
+                                        }
+                                      },
+                                      "second": {
+                                        "lit": {
+                                          "val": "1",
+                                          "type_name": "i32"
+                                        }
+                                      }
+                                    }
+                                  }
+                                ]
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

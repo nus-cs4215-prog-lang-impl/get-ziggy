@@ -90,6 +90,50 @@ test "serialize JsonAstNode to JSON" {
         try testing.expect(std.mem.indexOf(u8, result, "\"type_name\":\"i32\"") != null);
         try testing.expect(std.mem.indexOf(u8, result, "\"val\":\"20\"") != null);
     }
+
+    // Test case 4: Assignment node with arithmetic expression
+    {
+        // lhs: "result"
+        const lhs_name = try allocator.dupe(u8, "result");
+
+        // rhs: 10 + 20
+        const first_lit = try allocator.create(JsonAstNode);
+        first_lit.* = JsonAstNode{ .lit = .{ .val = "10", .type_name = .i32 } };
+
+        const second_lit = try allocator.create(JsonAstNode);
+        second_lit.* = JsonAstNode{ .lit = .{ .val = "20", .type_name = .i32 } };
+
+        const rhs_node = try allocator.create(JsonAstNode);
+        rhs_node.* = JsonAstNode{
+            .arith = .{
+                .sym = BinaryOperator{ .arith = .Add },
+                .first = first_lit,
+                .second = second_lit,
+            },
+        };
+
+        // lhs node: "result"
+        const lhs_node = try allocator.create(JsonAstNode);
+        lhs_node.* = JsonAstNode{ .nam = lhs_name };
+
+        // compound assign node: result += (10 + 20)
+        const node = JsonAstNode{
+            .compound_assign = .{
+                .sym = BinaryOperator{ .compound_assign = .AddAssign }, // e.g., +=
+                .first = lhs_node, // The variable name node
+                .second = rhs_node, // The arithmetic expression node
+            },
+        };
+
+        var string = std.ArrayList(u8).init(allocator);
+        defer string.deinit();
+
+        try json.stringify(node, .{}, string.writer());
+
+        const result = string.items;
+        // Print the resulting JSON string
+        std.debug.print("\nSerialized compound_assign JSON: {s}\n", .{result});
+    }
 }
 
 test "parse JSON to JsonAstNode" {
@@ -234,7 +278,7 @@ test "parse let_stmt.json" {
     defer arena.deinit();
     const allocator = arena.allocator();
 
-    const json_bytes = try std.fs.cwd().readFileAlloc(allocator, "tests/let_stmt.json", 1024 * 1024); // Limit file size
+    const json_bytes = try std.fs.cwd().readFileAlloc(allocator, "tests/simple.json", 1024 * 1024); // Limit file size
     defer allocator.free(json_bytes);
 
     // 2. Parse the JSON into JsonAstNode

@@ -392,7 +392,7 @@ pub const BinaryOperator = union(enum) {
     pub fn jsonParse(allocator: std.mem.Allocator, value: *json.Scanner, options: json.ParseOptions) !BinaryOperator {
         const val = try json.innerParse(json.Value, allocator, value, options);
         const str = val.string;
-        // std.debug.print("val: {}\n", .{val});
+        std.debug.print("val: {}\n", .{val});
 
         // Try to parse as CompOperator
         if (std.mem.eql(u8, str, "==")) return BinaryOperator{ .comp = .Eq };
@@ -457,29 +457,11 @@ pub const CompileErrors = error{
     OutOfMemory,
 };
 
-// AstNode Declaration
-pub const AstNode = union(enum) {
-    Literal: LiteralVal,
-    Name: []const u8,
-    App: struct { func: *AstNode, args: []*AstNode },
-    LogicalOp: struct { op: LogicalOperator, left: *AstNode, right: *AstNode },
-    BinaryOp: struct { op: BinaryOperator, left: *AstNode, right: *AstNode },
-    UnaryOp: struct { op: UnaryOperator, operand: *AstNode },
-    Lambda: struct { params: []Param, body: *AstNode },
-    Sequence: struct { statements: []*AstNode },
-    Block: struct { body: *AstNode },
-    VarDecl: struct { name: []const u8, value: *AstNode },
-    Assignment: struct { name: []const u8, value: *AstNode },
-    Conditional: struct { condition: *AstNode, cons: *AstNode, alt: *AstNode },
-    FnDecl: struct { name: []const u8, params: []Param, body: *AstNode },
-    Return: struct { value: ?*AstNode },
-    WhileLoop: struct { condition: *AstNode, body: *AstNode },
-};
-
 pub const JsonAstNode = union(enum) {
     lit: LiteralVal,
     nam: []const u8,
     app: struct { nam: []const u8, args: []*JsonAstNode },
+    comp: BinaryOperation,
     logic: BinaryOperation,
     arith: BinaryOperation,
     borrow: UnaryOperation,
