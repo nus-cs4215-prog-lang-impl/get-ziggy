@@ -155,7 +155,6 @@ def expr_infix_operator(node):
     return infix, op_type, node.getChild(0), node.getChild(2)
 
 
-# TODO: for trimmming expr
 def trim_expr(node, rule_names):
     rule_name = rule_names[node.getRuleIndex()]
 
@@ -189,7 +188,7 @@ def trim_expr(node, rule_names):
             fn_name = trim_expr(node.getChild(0), rule_names)
             return {
                 "app": {
-                    "nam": fn_name,
+                    "nam": fn_name['nam'],
                     "args": get_call_params(node.getChild(2), rule_names),
                 }
             }
@@ -227,7 +226,6 @@ def trim_expr(node, rule_names):
         else:
             return trim_expr(node.getChild(0), rule_names)
 
-    # TODO: @petr from chunyu: where else is this used, can i switch this to just nam - string?
     elif rule_name == "pathExpression":
         path = node.getChild(0)
         assert path.getChildCount() == 1, "Assertion: Var name path must be of len 1"
