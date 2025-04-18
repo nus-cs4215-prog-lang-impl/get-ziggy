@@ -227,18 +227,17 @@ def trim_expr(node, rule_names):
         else:
             return trim_expr(node.getChild(0), rule_names)
 
+    # TODO: @petr from chunyu: where else is this used, can i switch this to just nam - string?
     elif rule_name == "pathExpression":
         path = node.getChild(0)
         assert path.getChildCount() == 1, "Assertion: Var name path must be of len 1"
         return {
-            "nam": {
-                "val": path.getChild(0)
+            "nam": path.getChild(0)
                 .getChild(0)
                 .getChild(0)
                 .getChild(0)
                 .getSymbol()
                 .text,
-            }
         }
 
     elif rule_name == "literalExpression":
@@ -444,7 +443,7 @@ if __name__ == "__main__":
     if syntax_tree:
         # NOTE: if multple files with same name but diff dir are parsed then silent conflict
         out_filename = (args.f.split("/")[-1]).split(".")[0]
-        with open(f"/app/out_parse/{out_filename}.json", "w", encoding="utf-8") as f:
+        with open(f"../out_parse/{out_filename}.json", "w", encoding="utf-8") as f:
             # print(syntax_tree)
             json.dump(syntax_tree, f, indent=2)
     else:
