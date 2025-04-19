@@ -356,7 +356,10 @@ def trim_tree(node, rule_names):
                 elif rule == "blockExpression":
                     body = trim_tree(child.getChild(1), rule_names)
 
+            body = None if body == "" else body
+
             return {"fun": {"nam": fun_name, "params": params, "return_type": rtn_type, "body": body}}
+
         elif rule_name == "blockExpression":
             return {"blk": {"body": trim_tree(node.getChild(1), rule_names)}}
 
