@@ -31,7 +31,7 @@ test "compile simple program: let x = 1 + 2; x" {
     var one = JsonAstNode{ .lit = .{ .val = "1", .type_name = .i32 } };
     var two = JsonAstNode{ .lit = .{ .val = "2", .type_name = .i32 } };
     var add_expr = JsonAstNode{ .arith = .{ .sym = .{ .arith = .Add }, .first = &one, .second = &two } };
-    var var_decl = JsonAstNode{ .assign = .{ .nam = "x", .value = &add_expr, .is_mut = false } }; // Assuming 'let' implies immutable by default
+    var var_decl = JsonAstNode{ .assign = .{ .nam = "x", .val = &add_expr, .is_mut = false } }; // Assuming 'let' implies immutable by default
     var load_x = JsonAstNode{ .nam = "x" };
 
     var statements_slice = [_]*JsonAstNode{

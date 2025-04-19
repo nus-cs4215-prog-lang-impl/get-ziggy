@@ -117,6 +117,10 @@ pub const Compiler = struct {
                 // Function declaration introduces the function name as a local
                 try locals.append(fun_data.nam);
                 // Don't recurse into the body for *this* scope's locals
+                // If body exists, scan it for its own locals if needed elsewhere, but not here.
+                if (fun_data.body) |body_node| {
+                    _ = body_node; // Avoid unused variable warning if not scanning here
+                }
             },
             .while_loop => |loop_data| {
                 try self.scanNodeRecursive(loop_data.pred, locals);
@@ -280,7 +284,7 @@ pub const Compiler = struct {
 
     // Compiles a function definition (declaration).
     // This involves creating a closure object (Ldf) and assigning it to the function's name.
-    fn compileFnDecl(self: *Compiler, name: []const u8, params: []Param, body: *JsonAstNode) CompileErrors!void {
+    fn compileFnDecl(self: *Compiler, name: []const u8, params: []Param, body: ?*JsonAstNode) CompileErrors!void {
         // Technique: Define the function object first, then assign it.
         // 1. Add Goto to jump over the function body compilation step
         const goto_over_body_idx = self.nextInstrAddr();
@@ -289,17 +293,23 @@ pub const Compiler = struct {
         // 2. Get the start address of the actual function code
         const func_body_addr = self.nextInstrAddr();
 
-        // 3. Compile the function body itself.
-        //    A function body should implicitly act like a block, managing its own scope.
-        //    We might need to ensure EnterScope/ExitScope are handled correctly for parameters and locals.
-        //    Let's assume compileBlock or equivalent logic handles the scope within the body.
-        //    TODO: Refine scope handling for function bodies.
-        //    For now, just compile the body node.
-        // const body_locals = try self.scanForLocals(body); // Scan locals *within* the body
-        // Need to include params in the scope? The VM's CALL instruction should handle this.
-        // try self.addInstr(.{ .EnterScope = .{ .locals = body_locals }}); // Enter scope for body locals
-        try self.compile(body);
-        // try self.addInstr(.ExitScope); // Exit scope for body locals
+        // 3. Compile the function body itself, if it exists.
+        if (body) |body_node| {
+            // A function body should implicitly act like a block, managing its own scope.
+            // We might need to ensure EnterScope/ExitScope are handled correctly for parameters and locals.
+            // Let's assume compileBlock or equivalent logic handles the scope within the body.
+            // TODO: Refine scope handling for function bodies.
+            // For now, just compile the body node.
+            // const body_locals = try self.scanForLocals(body_node); // Scan locals *within* the body
+            // Need to include params in the scope? The VM's CALL instruction should handle this.
+            // try self.addInstr(.{ .EnterScope = .{ .locals = body_locals }}); // Enter scope for body locals
+            try self.compile(body_node);
+            // try self.addInstr(.ExitScope); // Exit scope for body locals
+        } else {
+            // If there's no body, the function should implicitly return 'undefined' or equivalent.
+            // Push Undefined here.
+            try self.addInstr(.{ .Ldc = .{ .val = "undefined", .type_name = .Undefined } });
+        }
 
         // 4. Add Reset instruction at the end of the body to return control.
         try self.addInstr(.Reset);
@@ -569,7 +579,7 @@ pub fn main() !void {
     var one = JsonAstNode{ .lit = .{ .val = "1", .type_name = .i32 } };
     var two = JsonAstNode{ .lit = .{ .val = "2", .type_name = .i32 } };
     var add_expr = JsonAstNode{ .arith = .{ .sym = .{ .arith = .Add }, .first = &one, .second = &two } };
-    var var_decl = JsonAstNode{ .assign = .{ .nam = "x", .value = &add_expr, .is_mut = false } };
+    var var_decl = JsonAstNode{ .assign = .{ .nam = "x", .val = &add_expr, .is_mut = false } };
     var load_x = JsonAstNode{ .nam = "x" };
 
     var statements_slice = [_]*JsonAstNode{

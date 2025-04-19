@@ -92,7 +92,7 @@ def expr_pre_post_operator(node):
 
             attr = node.getChild(1).getSymbol().text
             if op in borrow and attr in borrow_attr:
-                op_type = "borrow mut"
+                op_type = "borrow_mut"
 
         else:
             expr = node.getChild(1)
@@ -155,7 +155,6 @@ def expr_infix_operator(node):
     return infix, op_type, node.getChild(0), node.getChild(2)
 
 
-# TODO: for trimmming expr
 def trim_expr(node, rule_names):
     rule_name = rule_names[node.getRuleIndex()]
 
@@ -189,7 +188,7 @@ def trim_expr(node, rule_names):
             fn_name = trim_expr(node.getChild(0), rule_names)
             return {
                 "app": {
-                    "nam": fn_name,
+                    "nam": fn_name['nam'],
                     "args": get_call_params(node.getChild(2), rule_names),
                 }
             }
@@ -231,14 +230,12 @@ def trim_expr(node, rule_names):
         path = node.getChild(0)
         assert path.getChildCount() == 1, "Assertion: Var name path must be of len 1"
         return {
-            "nam": {
-                "val": path.getChild(0)
+            "nam": path.getChild(0)
                 .getChild(0)
                 .getChild(0)
                 .getChild(0)
                 .getSymbol()
                 .text,
-            }
         }
 
     elif rule_name == "literalExpression":
@@ -359,7 +356,10 @@ def trim_tree(node, rule_names):
                 elif rule == "blockExpression":
                     body = trim_tree(child.getChild(1), rule_names)
 
+            body = None if body == "" else body
+
             return {"fun": {"nam": fun_name, "params": params, "return_type": rtn_type, "body": body}}
+
         elif rule_name == "blockExpression":
             return {"blk": {"body": trim_tree(node.getChild(1), rule_names)}}
 
@@ -444,7 +444,7 @@ if __name__ == "__main__":
     if syntax_tree:
         # NOTE: if multple files with same name but diff dir are parsed then silent conflict
         out_filename = (args.f.split("/")[-1]).split(".")[0]
-        with open(f"/app/out_parse/{out_filename}.json", "w", encoding="utf-8") as f:
+        with open(f"../out_parse/{out_filename}.json", "w", encoding="utf-8") as f:
             # print(syntax_tree)
             json.dump(syntax_tree, f, indent=2)
     else:

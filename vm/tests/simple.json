@@ -1,0 +1,39 @@
+{
+  "blk": {
+    "body": {
+      "seq": {
+        "stmts": [
+          {
+            "fun": {
+              "nam": "main",
+              "params": [],
+              "return_type": null,
+              "body": {
+                "seq": {
+                  "stmts": [
+                    {
+                      "compound_assign": {
+                        "sym": "+",
+                        "first": {
+                          "nam": {
+                            "val": "x"
+                          }
+                        },
+                        "second": {
+                          "lit": {
+                            "val": "1",
+                            "type_name": "i32"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
