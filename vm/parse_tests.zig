@@ -12,7 +12,7 @@ const BinaryOperator = types.BinaryOperator;
 const LogicalOperator = types.LogicalOperator;
 const Param = types.Param;
 const CompileErrors = types.CompileErrors;
-const AstNode = types.AstNode; // Keep if still used elsewhere, otherwise remove
+// const AstNode = types.AstNode; // Keep if still used elsewhere, otherwise remove
 const JsonAstNode = types.JsonAstNode;
 const Instruction = types.Instruction;
 

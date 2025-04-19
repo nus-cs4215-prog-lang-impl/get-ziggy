@@ -446,10 +446,7 @@ pub const BinaryOperation = struct {
     second: *JsonAstNode,
 };
 
-pub const Param = struct {
-    name: []const u8,
-    // TODO: type_info?
-};
+pub const Param = struct { nam: []const u8, type_name: TypeName };
 
 // Explicit Error Set
 pub const CompileErrors = error{
@@ -476,7 +473,7 @@ pub const JsonAstNode = union(enum) {
     compound_assign: BinaryOperation,
     type_cast: BinaryOperation,
     cond: struct { pred: *JsonAstNode, cons: *JsonAstNode, alt: *JsonAstNode },
-    fun: struct { nam: []const u8, params: []Param, body: *JsonAstNode },
+    fun: struct { nam: []const u8, params: []Param, body: ?*JsonAstNode },
     while_loop: struct { pred: *JsonAstNode, body: *JsonAstNode },
     return_statement: struct { body: *JsonAstNode },
 };
