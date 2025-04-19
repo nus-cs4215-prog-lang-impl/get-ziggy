@@ -470,12 +470,12 @@ pub const JsonAstNode = union(enum) {
     question: UnaryOperation,
     seq: struct { stmts: []*JsonAstNode },
     blk: struct { body: *JsonAstNode },
-    assign: struct { nam: []const u8, val: *JsonAstNode, is_mut: bool, type_name: ?TypeName }, // Added type_name
+    assign: struct { nam: []const u8, val: *JsonAstNode, is_mut: bool, type_name: ?TypeName },
     reassign: BinaryOperation,
     compound_assign: BinaryOperation,
     type_cast: BinaryOperation,
     cond: struct { pred: *JsonAstNode, cons: *JsonAstNode, alt: ?*JsonAstNode },
-    fun: struct { nam: []const u8, params: []Param, body: ?*JsonAstNode, return_type: ?TypeName }, // Added return_type
+    fun: struct { nam: []const u8, params: []Param, body: ?*JsonAstNode, return_type: ?TypeName },
     while_loop: struct { pred: *JsonAstNode, body: *JsonAstNode },
     return_statement: ControlOperation,
     continue_statement: ControlOperation,
