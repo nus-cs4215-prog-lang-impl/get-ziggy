@@ -92,7 +92,7 @@ def expr_pre_post_operator(node):
 
             attr = node.getChild(1).getSymbol().text
             if op in borrow and attr in borrow_attr:
-                op_type = "borrow mut"
+                op_type = "borrow_mut"
 
         else:
             expr = node.getChild(1)
