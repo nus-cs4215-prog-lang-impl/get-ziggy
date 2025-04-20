@@ -78,7 +78,7 @@ pub const Compiler = struct {
     // Scan for locals defined within a given node (scope)
     fn scanNodeRecursive(self: *Compiler, node: *const JsonAstNode, locals: *std.ArrayList([]const u8)) !void {
         switch (node.*) {
-            .lit, .nam => {}, // Literals and names don't declare locals
+            .lit, .nam, .continue_statement, .break_statement => {}, // Literals and names don't declare locals
             .app => |app_data| {
                 // Scan function/name part (might be complex expr) and args
                 // try self.scanNodeRecursive(app_data.nam, locals); // 'nam' is string, not node
@@ -88,7 +88,7 @@ pub const Compiler = struct {
                 try self.scanNodeRecursive(op_data.first, locals);
                 try self.scanNodeRecursive(op_data.second, locals);
             },
-            .arith, .reassign, .compound_assign, .type_cast => |op_data| {
+            .arith, .comp, .reassign, .compound_assign, .type_cast => |op_data| {
                 try self.scanNodeRecursive(op_data.first, locals);
                 try self.scanNodeRecursive(op_data.second, locals);
             },
@@ -111,7 +111,9 @@ pub const Compiler = struct {
             .cond => |cond_data| {
                 try self.scanNodeRecursive(cond_data.pred, locals);
                 try self.scanNodeRecursive(cond_data.cons, locals);
-                try self.scanNodeRecursive(cond_data.alt, locals);
+                if (cond_data.alt) |alt_node| {
+                    try self.scanNodeRecursive(alt_node, locals);
+                }
             },
             .fun => |fun_data| {
                 // Function declaration introduces the function name as a local
@@ -127,7 +129,9 @@ pub const Compiler = struct {
                 try self.scanNodeRecursive(loop_data.body, locals);
             },
             .return_statement => |ret_data| {
-                try self.scanNodeRecursive(ret_data.body, locals);
+                if (ret_data.body) |body_node| {
+                    try self.scanNodeRecursive(body_node, locals);
+                }
             },
         }
     }
@@ -253,7 +257,7 @@ pub const Compiler = struct {
         try self.addInstr(.{ .Assign = name }); // Use Assign instruction for reassignment too
     }
 
-    fn compileConditional(self: *Compiler, condition: *const JsonAstNode, cons: *const JsonAstNode, alt: *const JsonAstNode) CompileErrors!void {
+    fn compileConditional(self: *Compiler, condition: *const JsonAstNode, cons: *const JsonAstNode, alt: ?*const JsonAstNode) CompileErrors!void {
         // 1. Compile condition
         try self.compile(condition);
 
@@ -274,7 +278,14 @@ pub const Compiler = struct {
         self.patchJump(jof_idx, alt_addr);
 
         // 7. Compile 'else' branch (alt)
-        try self.compile(alt);
+        // TODO: Can we just remove else branch altogehter if empty?
+        if (alt) |alt_node| {
+            try self.compile(alt_node);
+        } else {
+            // If there's no 'else' branch, we can push 'undefined' or equivalent.
+            // This is the default value for the 'else' case.
+            try self.addInstr(.{ .Ldc = .{ .val = "undefined", .type_name = .Undefined } });
+        }
         // 8. Get address after 'else' branch - this is where Goto jumps to
         const end_addr = self.nextInstrAddr();
         // 9. Patch Goto to jump to end_addr
@@ -344,6 +355,7 @@ pub const Compiler = struct {
             .nam => |name| try self.addInstr(.{ .Ld = name }),
 
             // Binary Operations
+            .comp => |op_data| try self.compileBinaryOp(op_data.first, op_data.second, op_data.sym),
             .arith => |op_data| try self.compileBinaryOp(op_data.first, op_data.second, op_data.sym),
             .reassign => |op_data| {
                 try self.compile(op_data.second); // Compile the value first
@@ -433,8 +445,13 @@ pub const Compiler = struct {
 
             .return_statement => |ret_data| {
                 // Compile the return value expression
-                try self.compile(ret_data.body);
-                // Add Reset instruction to return from function
+                if (ret_data.body) |body_node| {
+                    try self.compile(body_node);
+                } else {
+                    // If there's no return value, we might want to push 'undefined' or equivalent.
+                    // This is the default return value for functions without explicit return.
+                    try self.addInstr(.{ .Ldc = .{ .val = "undefined", .type_name = .Undefined } });
+                }
                 try self.addInstr(.Reset);
             },
 
@@ -505,13 +522,11 @@ pub const Compiler = struct {
                 // Loops typically evaluate to 'undefined' or equivalent. Push Undefined using LiteralVal.
                 try self.addInstr(.{ .Ldc = .{ .val = "undefined", .type_name = .Undefined } });
             },
-
-            // else => {
-            //     // Get the tag name for better error reporting
-            //     const tag_name = @tagName(node.*);
-            //     std.debug.print("Compilation error: Unimplemented AST node type: {s}\n", .{tag_name});
-            //     return CompileErrors.UnimplementedAstNode;
-            // },
+            .continue_statement, .break_statement => {
+                const tag_name = @tagName(node.*);
+                std.debug.print("Compilation error: Unimplemented AST node type: {s}\n", .{tag_name});
+                return CompileErrors.UnimplementedAstNode;
+            },
         }
     }
 
@@ -552,7 +567,7 @@ pub const Compiler = struct {
                     for (f.params, 0..) |param, j| {
                         if (j > 0) std.debug.print(", ", .{});
                         // Assuming Param has a 'name' field
-                        std.debug.print("\"{s}\"", .{param.name});
+                        std.debug.print("\"{s}\"", .{param.nam});
                     }
                     std.debug.print("], addr: {d})\n", .{f.addr});
                 },
