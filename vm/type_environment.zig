@@ -1,12 +1,13 @@
 const std = @import("std");
 const Allocator = std.mem.Allocator;
+const types = @import("types.zig");
 const TypeName = types.TypeName;
 
 const StringHashMap = std.StringHashMap;
 
 // TODO: account for functions
 // TODO: ownership stuff should be here as well
-const SymbolInfo = struct {
+pub const SymbolInfo = struct {
     type_name: TypeName,
     is_mut: bool,
 };
@@ -52,17 +53,17 @@ pub const TypeEnvironment = struct {
 
         const info = SymbolInfo{ .type_name = type_name, .is_mut = is_mut };
 
-        if (current_scope.contains(owned_name)) {
+        if (current_frame.contains(owned_name)) {
             std.debug.print("Type Error: Redeclaration of '{s}' in the same scope.\n", .{owned_name});
             self.alloc.free(owned_name);
-            return error.SymbolAlreadyDeclared; // Or a more specific type error
+            return error.SymbolAlreadyDeclared;
         }
 
         try current_frame.put(owned_name, info);
         std.debug.print("Declared '{s}' (type: {any}, mut: {any}) in current frame.\n", .{ owned_name, type_name, is_mut });
     }
 
-    pub fn lookup(self: *const TypeEnvironment, name: []const u8) ?Type {
+    pub fn lookup(self: *const TypeEnvironment, name: []const u8) ?SymbolInfo {
         var i = self.frames.items.len;
         while (i > 0) {
             i -= 1;
