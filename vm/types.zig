@@ -484,8 +484,8 @@ pub const JsonAstNode = union(enum) {
 
 pub const Instruction = union(enum) {
     Ldc: LiteralVal, // Load constant
-    Ld: []const u8, // Load variable by name
-    Assign: []const u8, // Assign to variable name
+    Ld: struct { nam: []const u8, pos: u32 }, // Load variable by name
+    Assign: struct { nam: []const u8, pos: u32 }, // Assign to variable name
     Unop: UnaryOperator,
     Binop: BinaryOperator, // TODO: Fix this with tagged unions, override the Json
     Pop: void, // Pop top value from stack

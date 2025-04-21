@@ -16,11 +16,13 @@ const Instruction = types.Instruction;
 pub const Compiler = struct {
     alloc: Allocator,
     instructions: std.ArrayList(Instruction),
+    compiletime_env: ?[][]u32,
 
     pub fn init(alloc: Allocator) Compiler {
         return .{
             .alloc = alloc,
             .instructions = std.ArrayList(Instruction).init(alloc),
+            .compiletime_env = null,
         };
     }
 
@@ -345,6 +347,12 @@ pub const Compiler = struct {
         //    If part of a sequence, compileSequence will pop this.
     }
 
+    fn get_compiletime_env_pos(self: *Compiler, name: []u8) [2]u32 {
+        _ = self;
+        _ = name;
+        return .{ 420, 420 };
+    }
+
     // NOTE: CompileErrors!void is a hack to get around "unable to resolve inferred error set":
     // https://github.com/ziglang/zig/issues/763
     // TODO: When all cases are implemented, we should not need CompileErrors anymore?
@@ -352,7 +360,7 @@ pub const Compiler = struct {
         switch (node.*) {
             // Use lit_data directly for Ldc
             .lit => |lit_data| try self.addInstr(.{ .Ldc = lit_data }),
-            .nam => |name| try self.addInstr(.{ .Ld = name }),
+            .nam => |name| try self.addInstr(.{ .Ld = .{ .nam = name, .pos = self.get_compiletime_env_pos(name) } }),
 
             // Binary Operations
             .comp => |op_data| try self.compileBinaryOp(op_data.first, op_data.second, op_data.sym),
@@ -373,7 +381,7 @@ pub const Compiler = struct {
                 // Assuming op_data.first is a .nam node for assignment target
                 if (op_data.first.* == .nam) {
                     const name = op_data.first.nam;
-                    try self.addInstr(.{ .Ld = name }); // Load current value
+                    try self.addInstr(.{ .Ld = .{ .name = name, .pos = self.get_compiletime_env_pos(name) } }); // Load current value
                     try self.compile(op_data.second); // Compile the right-hand side value
                     // Convert compound operator to the corresponding basic binary operator
                     const basic_op = switch (op_data.sym.compound_assign) {
@@ -424,7 +432,7 @@ pub const Compiler = struct {
                 // Need to compile the function expression first, then args
                 // Assuming app_data.nam is the function name for now.
                 // TODO: Handle cases where the function is a complex expression.
-                try self.addInstr(.{ .Ld = app_data.nam }); // Load function by name
+                try self.addInstr(.{ .Ld = .{ .nam = app_data.nam, .pos = self.get_compiletime_env_pos(app_data.nam) } }); // Load function by name
 
                 // Compile arguments
                 for (app_data.args) |arg| {
@@ -546,7 +554,7 @@ pub const Compiler = struct {
             switch (instr) {
                 // Update Ldc printing
                 .Ldc => |val| std.debug.print("Ldc(val: \"{s}\", type: {any})\n", .{ val.val, val.type_name }),
-                .Ld => |name| std.debug.print("Ld(\"{s}\")\n", .{name}),
+                .Ld => |val| std.debug.print("Ld(\"{s}\", at: {})\n", .{ val.nam, val.pos }),
                 .Assign => |name| std.debug.print("Assign(\"{s}\")\n", .{name}),
                 .Unop => |op| std.debug.print("Unop({any})\n", .{op}),
                 .Binop => |op| std.debug.print("Binop({any})\n", .{op}),
