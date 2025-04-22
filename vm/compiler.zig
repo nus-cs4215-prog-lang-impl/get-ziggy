@@ -1,6 +1,7 @@
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 const types = @import("types.zig");
+const TypeChecker = @import("type_checker.zig").TypeChecker;
 
 const LiteralVal = types.LiteralVal; // Use LiteralVal
 const TypeName = types.TypeName; // Import TypeName
@@ -16,11 +17,13 @@ const Instruction = types.Instruction;
 pub const Compiler = struct {
     alloc: Allocator,
     instructions: std.ArrayList(Instruction),
+    type_checker: TypeChecker,
 
     pub fn init(alloc: Allocator) Compiler {
         return .{
             .alloc = alloc,
             .instructions = std.ArrayList(Instruction).init(alloc),
+            .type_checker = TypeChecker.init(alloc),
         };
     }
 
@@ -52,6 +55,7 @@ pub const Compiler = struct {
             }
         }
         self.instructions.deinit();
+        self.type_checker.deinit();
     }
 
     fn addInstr(self: *Compiler, instruction: Instruction) !void {
@@ -349,6 +353,10 @@ pub const Compiler = struct {
     // https://github.com/ziglang/zig/issues/763
     // TODO: When all cases are implemented, we should not need CompileErrors anymore?
     pub fn compile(self: *Compiler, node: *const JsonAstNode) CompileErrors!void {
+        // Try type checking first
+
+        _ = try self.type_checker.check(node);
+
         switch (node.*) {
             // Use lit_data directly for Ldc
             .lit => |lit_data| try self.addInstr(.{ .Ldc = lit_data }),
