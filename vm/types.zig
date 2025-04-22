@@ -455,6 +455,7 @@ pub const CompileErrors = error{
     UnimplementedAstNode,
     UnimplementedInstruction,
     OutOfMemory,
+    UnboundName,
 };
 
 pub const JsonAstNode = union(enum) {

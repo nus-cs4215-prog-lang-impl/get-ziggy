@@ -15,15 +15,15 @@ const UnaryOperator = types.UnaryOperator;
 
 pub const TypeChecker = struct {
     alloc: Allocator,
-    env: *TypeEnvironment,
+    env: TypeEnvironment,
 
     pub fn init(alloc: Allocator) TypeChecker {
-        const checker = TypeChecker{
+        var checker = TypeChecker{
             .alloc = alloc,
             .env = TypeEnvironment.init(alloc),
         };
         checker.env.pushFrame() catch @panic("Failed to push global frame");
-        //checker.addBuiltins catch @panic("Failed to add builtins");
+        //checker.addBuiltins(&checker.env) catch @panic("Failed to add builtins");
         return checker;
     }
 
@@ -31,12 +31,13 @@ pub const TypeChecker = struct {
         self.env.deinit();
     }
 
-    // fn addBuiltins(self: *TypeChecker) !void
+    // fn addBuiltins(env: *TypeEnvironment) !void
 
-    pub fn check(self: *TypeChecker, node: *const JsonAstNode) !void {
+    // Check function now returns the type info or an error
+    pub fn check(self: *TypeChecker, node: *const JsonAstNode) !SymbolInfo {
         return switch (node.*) {
-            .lit => |lit_data| self.checkLit(lit_data),
-            .nam => |name| self.checkValue(name),
+            .lit => |lit_data| return self.checkLit(lit_data),
+            .nam => |name| return self.checkVal(name),
             .app => return CompileErrors.UnimplementedAstNode,
             .comp => return CompileErrors.UnimplementedAstNode,
             .logic => return CompileErrors.UnimplementedAstNode,

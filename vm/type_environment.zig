@@ -26,7 +26,7 @@ pub const TypeEnvironment = struct {
     }
 
     pub fn deinit(self: *TypeEnvironment) void {
-        for (self.frames.items) |frame| {
+        for (self.frames.items) |*frame| {
             frame.deinit();
         }
         self.frames.deinit();
@@ -34,13 +34,14 @@ pub const TypeEnvironment = struct {
 
     pub fn pushFrame(self: *TypeEnvironment) !void {
         try self.frames.append(TypeFrame.init(self.alloc));
-        std.debug.print("Extend scope. Depth: {}\n", .{self.frames.item.len});
+        std.debug.print("Extend scope. Depth: {}\n", .{self.frames.items.len});
     }
 
     pub fn popFrame(self: *TypeEnvironment) void {
         if (self.frames.items.len > 0) {
             var frame = self.frames.pop();
             frame.deinit();
+            std.debug.print("Reduce scope. Depth: {}\n", .{self.frames.items.len});
         } else {
             @panic("Attempted to pop frame from empty or global-only environment");
         }
@@ -55,10 +56,13 @@ pub const TypeEnvironment = struct {
 
         if (current_frame.contains(owned_name)) {
             std.debug.print("Type Error: Redeclaration of '{s}' in the same scope.\n", .{owned_name});
+            // No need to free owned_name here, errdefer handles it if put fails.
+            // If contains() is true, put won't be called. We need to free manually.
             self.alloc.free(owned_name);
             return error.SymbolAlreadyDeclared;
         }
 
+        // If put fails, errdefer will free owned_name.
         try current_frame.put(owned_name, info);
         std.debug.print("Declared '{s}' (type: {any}, mut: {any}) in current frame.\n", .{ owned_name, type_name, is_mut });
     }
@@ -77,7 +81,7 @@ pub const TypeEnvironment = struct {
 
     fn currentFrame(self: *TypeEnvironment) *TypeFrame {
         if (self.frames.items.len == 0) {
-            @panic("Attempted to access current frame from empty or global-only environment");
+            @panic("Attempted to access current frame from empty environment");
         }
         return &self.frames.items[self.frames.items.len - 1];
     }
