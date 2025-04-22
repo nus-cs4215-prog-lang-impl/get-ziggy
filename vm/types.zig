@@ -453,6 +453,7 @@ pub const ControlOperation = struct { body: ?*JsonAstNode };
 // Explicit Error Set
 pub const CompileErrors = error{
     UnimplementedAstNode,
+    UnimplementedInstruction,
     OutOfMemory,
 };
 

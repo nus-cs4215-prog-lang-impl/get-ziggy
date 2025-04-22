@@ -33,7 +33,7 @@ pub const TypeChecker = struct {
 
     // fn addBuiltins(self: *TypeChecker) !void
 
-    pub fn check(self: *TypeChecker, node: *JsonAstNode) !void {
+    pub fn check(self: *TypeChecker, node: *const JsonAstNode) !void {
         return switch (node.*) {
             .lit => |lit_data| self.checkLit(lit_data),
             .nam => |name| self.checkValue(name),
