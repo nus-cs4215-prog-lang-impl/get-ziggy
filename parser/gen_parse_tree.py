@@ -437,15 +437,15 @@ def trim_tree(node, rule_names):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Choose Rust program to parse")
-    parser.add_argument("-f", type=str, help="Filepath of file to be parsed")
+    parser = argparse.ArgumentParser(description="Parse a Rust file and output JSON")
+    parser.add_argument("-i", "--input", type=str, required=True, help="Filepath of the Rust file to be parsed")
+    parser.add_argument("-o", "--output", type=str, required=True, help="Filepath for the output JSON file")
     args = parser.parse_args()
 
-    syntax_tree = parse_file(args.f)
+    syntax_tree = parse_file(args.input)
     if syntax_tree:
-        # NOTE: if multple files with same name but diff dir are parsed then silent conflict
-        out_filename = (args.f.split("/")[-1]).split(".")[0]
-        with open(f"/app/out_parse/{out_filename}.json", "w", encoding="utf-8") as f:
+        # Use the provided output path
+        with open(args.output, "w", encoding="utf-8") as f:
             # print(syntax_tree)
             json.dump(syntax_tree, f, indent=2)
     else:

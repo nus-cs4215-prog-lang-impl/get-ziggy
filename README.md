@@ -45,8 +45,22 @@ docker run -it -v $(pwd):/app ghcr.io/nus-cs4215-prog-lang-impl/get-ziggy
 ### Building the docker image from source
 
 ```bash
+
 nix build .#docker
 docker load < result
 docker run -it zig-antlr-shell
 ```
 
+### To build a zig executable of the compiler
+
+```bash
+zig build-exe main.zig --name my_compiler
+```
+
+To run the executable:
+
+```bash
+./my_compiler test.json
+```
+
+This should compile your rust code into a microcode
