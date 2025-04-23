@@ -353,10 +353,6 @@ pub const Compiler = struct {
     // https://github.com/ziglang/zig/issues/763
     // TODO: When all cases are implemented, we should not need CompileErrors anymore?
     pub fn compile(self: *Compiler, node: *const JsonAstNode) CompileErrors!void {
-        // Try type checking first
-
-        _ = try self.type_checker.check(node);
-
         switch (node.*) {
             // Use lit_data directly for Ldc
             .lit => |lit_data| try self.addInstr(.{ .Ldc = lit_data }),
@@ -540,6 +536,7 @@ pub const Compiler = struct {
 
     pub fn compileProgram(self: *Compiler, program_node: *const JsonAstNode) !void {
         // Compile the main program node
+        _ = try self.type_checker.check(program_node);
         try self.compile(program_node);
         // Add the final Done instruction
         try self.addInstr(.Done);

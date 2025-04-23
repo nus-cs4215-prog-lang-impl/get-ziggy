@@ -133,8 +133,8 @@ test "logical_test" {
     defer compiler.deinit();
 
     // Update literals to use LiteralVal, using String for bools as TypeName lacks Bool
-    var left_true = JsonAstNode{ .lit = .{ .val = "true", .type_name = .String } };
-    var right_false = JsonAstNode{ .lit = .{ .val = "false", .type_name = .String } };
+    var left_true = JsonAstNode{ .lit = .{ .val = "true", .type_name = .Bool } };
+    var right_false = JsonAstNode{ .lit = .{ .val = "false", .type_name = .Bool } };
     var log_and = JsonAstNode{ .logic = .{ .sym = .{ .logic = .And }, .first = &left_true, .second = &right_false } };
     var log_or = JsonAstNode{ .logic = .{ .sym = .{ .logic = .Or }, .first = &left_true, .second = &right_false } };
 
@@ -173,18 +173,18 @@ test "logical_test" {
     try testing.expectEqual(@as(usize, 11), instructions.len); // Adjust count based on actual output
 
     // And part
-    try expectLiteralValEqual(LiteralVal{ .val = "true", .type_name = .String }, instructions[0].Ldc);
+    try expectLiteralValEqual(LiteralVal{ .val = "true", .type_name = .Bool }, instructions[0].Ldc);
     try testing.expectEqual(Instruction{ .Jof = 4 }, instructions[1]);
     try testing.expectEqual(Instruction.Pop, instructions[2]);
-    try expectLiteralValEqual(LiteralVal{ .val = "false", .type_name = .String }, instructions[3].Ldc);
+    try expectLiteralValEqual(LiteralVal{ .val = "false", .type_name = .Bool }, instructions[3].Ldc);
     // Pop result of 'and'
     try testing.expectEqual(Instruction.Pop, instructions[4]);
     // Or part
-    try expectLiteralValEqual(LiteralVal{ .val = "true", .type_name = .String }, instructions[5].Ldc);
+    try expectLiteralValEqual(LiteralVal{ .val = "true", .type_name = .Bool }, instructions[5].Ldc);
     try testing.expectEqual(Instruction{ .Jof = 8 }, instructions[6]); // Jumps to instruction 8 (Pop) if left is false
     try testing.expectEqual(Instruction{ .Goto = 10 }, instructions[7]); // Jumps to instruction 10 (Done) if left is true
     try testing.expectEqual(Instruction.Pop, instructions[8]); // Pop the false from left if we jumped here
-    try expectLiteralValEqual(LiteralVal{ .val = "false", .type_name = .String }, instructions[9].Ldc);
+    try expectLiteralValEqual(LiteralVal{ .val = "false", .type_name = .Bool }, instructions[9].Ldc);
     // Done
     try testing.expectEqual(Instruction.Done, instructions[10]);
 }

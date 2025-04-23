@@ -10,6 +10,18 @@ const StringHashMap = std.StringHashMap;
 pub const SymbolInfo = struct {
     type_name: TypeName,
     is_mut: bool,
+
+    pub fn baseType(self: SymbolInfo) TypeName {
+        return self.type_name; // Assumes type_name stores the underlying type T for &T, &mut T etc.
+    }
+
+    pub fn create(type_name: TypeName, is_mut: bool) SymbolInfo {
+        return .{ .type_name = type_name, .is_mut = is_mut };
+    }
+
+    pub fn unit() SymbolInfo {
+        return .{ .type_name = TypeName.Undefined, .is_mut = false };
+    }
 };
 
 const TypeFrame = StringHashMap(SymbolInfo);
@@ -27,6 +39,10 @@ pub const TypeEnvironment = struct {
 
     pub fn deinit(self: *TypeEnvironment) void {
         for (self.frames.items) |*frame| {
+            var iter = frame.keyIterator();
+            while (iter.next()) |key_ptr| {
+                self.alloc.free(key_ptr.*);
+            }
             frame.deinit();
         }
         self.frames.deinit();

@@ -13,6 +13,27 @@ pub const TypeName = enum {
     Bool,
     Undefined,
 
+    pub fn isNumeric(self: TypeName) bool {
+        return switch (self) {
+            .i32, .i64, .u32, .u64, .f64 => true,
+            else => false,
+        };
+    }
+
+    pub fn isInteger(self: TypeName) bool {
+        return switch (self) {
+            .i32, .i64, .u32, .u64 => true,
+            else => false,
+        };
+    }
+
+    pub fn isSignedInteger(self: TypeName) bool {
+        return switch (self) {
+            .i32, .i64 => true,
+            else => false,
+        };
+    }
+
     pub fn jsonStringify(self: TypeName, writer: anytype) !void {
         try writer.write(switch (self) {
             .i32 => "i32",
@@ -456,6 +477,9 @@ pub const CompileErrors = error{
     UnimplementedInstruction,
     OutOfMemory,
     UnboundName,
+    TypeMismatch,
+    InvalidOperation,
+    SymbolAlreadyDeclared,
 };
 
 pub const JsonAstNode = union(enum) {
