@@ -75,9 +75,9 @@ pub const TypeChecker = struct {
             .blk => |blk_data| self.checkBlk(blk_data.body),
             .assign => |assign_data| self.checkAssign(assign_data.nam, assign_data.val, assign_data.is_mut, assign_data.type_name),
             .reassign => |reassign_data| self.checkReassign(reassign_data.first, reassign_data.second),
-            .compound_assign => return CompileErrors.UnimplementedAstNode,
+            .compound_assign => |compound_data| self.checkCompoundAssign(compound_data.first, compound_data.second),
             .type_cast => return CompileErrors.UnimplementedAstNode,
-            .cond => return CompileErrors.UnimplementedAstNode,
+            .cond => |cond_data| return self.checkCond(cond_data.pred, cond_data.cons, cond_data.alt),
             .while_loop => return CompileErrors.UnimplementedAstNode,
             .return_statement => return CompileErrors.UnimplementedAstNode,
             .continue_statement => return CompileErrors.UnimplementedAstNode,
@@ -356,5 +356,61 @@ pub const TypeChecker = struct {
         try self.env.setMutableBorrow(target_name, self.env.currentLifetime());
 
         return SymbolInfo.createRef(self.alloc, target_info.baseType(), true, self.env.currentLifetime());
+    }
+
+    fn checkCompoundAssign(self: *TypeChecker, first: *JsonAstNode, second: *JsonAstNode) !SymbolInfo {
+        // Similar logic to reassign + arithmetic check
+        const rhs_info = try self.check(second);
+
+        // Check LHS (assuming 'nam' for now)
+        if (first.* != .nam) {
+            std.debug.print("Type Error: Compound assignment target must be a variable (unimplemented: fields/derefs).\n", .{});
+            return error.InvalidOperation;
+        }
+        const lhs_name = first.nam;
+        const lhs_info = try self.checkVal(lhs_name);
+
+        if (!lhs_info.is_mut) {
+            std.debug.print("Type Error: Cannot compound assign to immutable variable '{s}'.\n", .{lhs_name});
+            return error.ImmutableAssignment;
+        }
+
+        // Check type compatibility for the operation (similar to checkArith)
+        const lhs_type = lhs_info.baseType();
+        const rhs_type = rhs_info.baseType();
+
+        if (!lhs_type.isNumeric() or !rhs_type.isNumeric()) {
+            std.debug.print("Type Error: Compound assignment requires numeric types, found '{any}' and '{any}'.\n", .{ lhs_type, rhs_type });
+            return error.TypeMismatch;
+        }
+        if (lhs_type != rhs_type) {
+            std.debug.print("Type Error: Compound assignment requires operands of the same type ('{any}' and '{any}')\n", .{ lhs_type, rhs_type });
+            return error.TypeMismatch;
+        }
+
+        return SymbolInfo.unit(self.alloc);
+    }
+
+    fn checkCond(self: *TypeChecker, pred: *JsonAstNode, cons: *JsonAstNode, alt: ?*JsonAstNode) !SymbolInfo {
+        // Check predicate is boolean
+        try self.expectBoolean(pred);
+
+        // Check 'then' branch
+        const cons_info = try self.check(cons);
+
+        // Check 'else' branch if it exists
+        if (alt) |alt_node| {
+            const alt_info = try self.check(alt_node);
+
+            if (cons_info.baseType() != alt_info.baseType()) {
+                std.debug.print("Type Error: `if` and `else` have incompatible types ('{any}' and '{any}')\n", .{ cons_info.baseType(), alt_info.baseType() });
+                return error.IfElseTypeMismatch;
+            }
+            return SymbolInfo.create(self.alloc, cons_info.baseType(), false, self.env.currentLifetime());
+        } else {
+            // If no 'else', the expression's type is Unit
+            // We could also check if the 'then' branch is Unit, but Rust allows non-Unit implicitly.
+            return SymbolInfo.unit(self.alloc);
+        }
     }
 };

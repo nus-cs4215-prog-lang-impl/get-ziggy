@@ -1,10 +1,10 @@
 fn main(){
-    let n = 5;
+    let mut n = 5;
     if n < 0 {
-        print("{} is negative", n);
+        n += 1;
     } else if n > 0 {
-        print("{} is positive", n);
+        n -= 1;
     } else {
-        print("{} is zero", n);
+        n += 2;
     }
 }

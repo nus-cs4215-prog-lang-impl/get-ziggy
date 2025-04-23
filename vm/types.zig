@@ -487,6 +487,8 @@ pub const CompileErrors = error{
     AssignmentIsBorrowed,
     BorrowConflictImmutable,
     BorrowConflictMutable,
+    IfElseTypeMismatch,
+    ImmutableAssignment,
     InvalidOperation,
     MutationOfImmutable,
     OutOfMemory,
