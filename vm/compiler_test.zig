@@ -271,8 +271,8 @@ test "logical_test" {
     // --- end and --- (result is false)
     // 4: Pop        (pop result of 'and' statement)
     // 5: Ldc "true" (or left)
-    // 6: Jof 9      (or jump if false to instruction 9) -> Should be Jof 8
-    // 7: Goto 10    (or jump to end if true - instruction 10) -> Should be Goto 10
+    // 6: Jof 8      (or jump if false to instruction 8)
+    // 7: Goto 10    (or jump to end if true - instruction 10)
     // --- jump target for Jof ---
     // 8: Pop        (or pop false)
     // 9: Ldc "false" (or right)
@@ -429,4 +429,154 @@ test "borrow mutable fail" {
     // Adjust the expected error if necessary.
     std.debug.print("Expecting type error for mutable borrow of immutable variable...\n", .{});
     try testing.expectError(CompileErrors.MutationOfImmutable, compiler.compileProgram(&program));
+}
+
+// NOTE: THIS IS KNOWN TO NOT WORK
+test "lifetime dangling reference assignment" {
+    // Setup
+    var compiler = Compiler.init(testing.allocator);
+    defer compiler.deinit();
+
+    // AST for:
+    // let x_outer = 0;    // Outer scope (L0)
+    // let mut r = &x_outer; // 'r' declared in L0, mutable so we can reassign
+    // {                   // Inner scope (L1)
+    //   let x_inner = 10;  // 'x_inner' declared in L1
+    //   r = &x_inner;      // Assign reference to short-lived 'x_inner' to 'r' -> Error: x_inner does not live long enough
+    // }
+
+    // Outer scope nodes
+    var zero = JsonAstNode{ .lit = .{ .val = "0", .type_name = .i32 } };
+    // x_outer needs to be mutable to be borrowed mutably if needed, but for immutable borrow it's fine.
+    var decl_x_outer = JsonAstNode{ .assign = .{ .nam = "x_outer", .val = &zero, .is_mut = false, .type_name = .i32 } };
+
+    var load_x_outer_for_borrow = JsonAstNode{ .nam = "x_outer" };
+    var borrow_x_outer = JsonAstNode{ .borrow = .{ .sym = .{ .borrow = .Borrow }, .first = &load_x_outer_for_borrow } }; // &x_outer
+    // 'r' must be mutable to allow the reassignment later.
+    // Type annotation for 'r' isn't strictly needed here as it's inferred, but good for clarity.
+    // Let's assume type inference works for now.
+    var decl_r = JsonAstNode{ .assign = .{ .nam = "r", .val = &borrow_x_outer, .is_mut = true, .type_name = null } }; // let mut r = &x_outer; (type inferred: &i32)
+
+    // Inner scope nodes
+    var ten = JsonAstNode{ .lit = .{ .val = "10", .type_name = .i32 } };
+    var decl_x_inner = JsonAstNode{ .assign = .{ .nam = "x_inner", .val = &ten, .is_mut = false, .type_name = .i32 } }; // let x_inner = 10;
+
+    var load_x_inner_for_borrow = JsonAstNode{ .nam = "x_inner" };
+    var borrow_x_inner = JsonAstNode{ .borrow = .{ .sym = .{ .borrow = .Borrow }, .first = &load_x_inner_for_borrow } }; // &x_inner
+
+    // Reassignment node: r = &x_inner
+    var load_r_for_reassign = JsonAstNode{ .nam = "r" }; // Target of reassignment is 'r'
+    var reassign_r = JsonAstNode{ .reassign = .{ .sym = .{ .reassign = .Assign }, .first = &load_r_for_reassign, .second = &borrow_x_inner } };
+
+    // Inner sequence
+    var inner_stmts_slice = [_]*JsonAstNode{ &decl_x_inner, &reassign_r };
+    var inner_seq = JsonAstNode{ .seq = .{ .stmts = &inner_stmts_slice } };
+
+    // Block node representing the inner scope
+    var block = JsonAstNode{ .blk = .{ .body = &inner_seq } };
+
+    // Outer sequence containing declarations and the block
+    var outer_stmts_slice = [_]*JsonAstNode{ &decl_x_outer, &decl_r, &block };
+    var program = JsonAstNode{ .seq = .{ .stmts = &outer_stmts_slice } };
+
+    // Compile and expect error
+    std.debug.print("Expecting type error for assigning short-lived reference...\n", .{});
+    // The error should occur during type checking of the reassignment `r = &x_inner`
+    // because the lifetime of the reference `&x_inner` (valid only within the block, L1)
+    // is shorter than the lifetime required by the variable `r` (declared in the outer scope, L0).
+    try testing.expectError(CompileErrors.ShortLivedBorrow, compiler.compileProgram(&program));
+}
+
+test "lifetime mutable immutable conflict" {
+    // Setup
+    var compiler = Compiler.init(testing.allocator);
+    defer compiler.deinit();
+
+    // AST for:
+    // let mut x = 5;
+    // let y = &x;     // Immutable borrow
+    // let z = &mut x; // Error: Mutable borrow conflicts with immutable
+    var five = JsonAstNode{ .lit = .{ .val = "5", .type_name = .i32 } };
+    var decl_x = JsonAstNode{ .assign = .{ .nam = "x", .val = &five, .is_mut = true, .type_name = .i32 } };
+
+    var load_x_for_imm_borrow = JsonAstNode{ .nam = "x" };
+    var borrow_x_imm = JsonAstNode{ .borrow = .{ .sym = .{ .borrow = .Borrow }, .first = &load_x_for_imm_borrow } };
+    var decl_y = JsonAstNode{ .assign = .{ .nam = "y", .val = &borrow_x_imm, .is_mut = false, .type_name = null } };
+
+    var load_x_for_mut_borrow = JsonAstNode{ .nam = "x" };
+    var borrow_x_mut = JsonAstNode{ .borrow_mut = .{ .sym = .{ .borrow_mut = .BorrowAttr }, .first = &load_x_for_mut_borrow } };
+    var decl_z = JsonAstNode{ .assign = .{ .nam = "z", .val = &borrow_x_mut, .is_mut = false, .type_name = null } };
+
+    var statements_slice = [_]*JsonAstNode{
+        &decl_x,
+        &decl_y, // Immutable borrow happens here
+        &decl_z, // Mutable borrow attempts here -> Error
+    };
+    const program = JsonAstNode{ .seq = .{ .stmts = &statements_slice } };
+
+    // Compile and expect error
+    std.debug.print("Expecting type error for mutable/immutable borrow conflict...\n", .{});
+    try testing.expectError(CompileErrors.BorrowConflictImmutable, compiler.compileProgram(&program));
+}
+
+test "lifetime mutable mutable conflict" {
+    // Setup
+    var compiler = Compiler.init(testing.allocator);
+    defer compiler.deinit();
+
+    // AST for:
+    // let mut x = 5;
+    // let y = &mut x; // First mutable borrow
+    // let z = &mut x; // Error: Second mutable borrow conflicts
+    var five = JsonAstNode{ .lit = .{ .val = "5", .type_name = .i32 } };
+    var decl_x = JsonAstNode{ .assign = .{ .nam = "x", .val = &five, .is_mut = true, .type_name = .i32 } };
+
+    var load_x_for_mut_borrow1 = JsonAstNode{ .nam = "x" };
+    var borrow_x_mut1 = JsonAstNode{ .borrow_mut = .{ .sym = .{ .borrow_mut = .BorrowAttr }, .first = &load_x_for_mut_borrow1 } };
+    var decl_y = JsonAstNode{ .assign = .{ .nam = "y", .val = &borrow_x_mut1, .is_mut = false, .type_name = null } };
+
+    var load_x_for_mut_borrow2 = JsonAstNode{ .nam = "x" };
+    var borrow_x_mut2 = JsonAstNode{ .borrow_mut = .{ .sym = .{ .borrow_mut = .BorrowAttr }, .first = &load_x_for_mut_borrow2 } };
+    var decl_z = JsonAstNode{ .assign = .{ .nam = "z", .val = &borrow_x_mut2, .is_mut = false, .type_name = null } };
+
+    var statements_slice = [_]*JsonAstNode{
+        &decl_x,
+        &decl_y, // First mutable borrow happens here
+        &decl_z, // Second mutable borrow attempts here -> Error
+    };
+    const program = JsonAstNode{ .seq = .{ .stmts = &statements_slice } };
+
+    // Compile and expect error
+    std.debug.print("Expecting type error for mutable/mutable borrow conflict...\n", .{});
+    try testing.expectError(CompileErrors.BorrowConflictMutable, compiler.compileProgram(&program));
+}
+
+test "lifetime use while mutably borrowed" {
+    // Setup
+    var compiler = Compiler.init(testing.allocator);
+    defer compiler.deinit();
+
+    // AST for:
+    // let mut x = 5;
+    // let y = &mut x; // Mutable borrow
+    // x;             // Error: Cannot use x while mutably borrowed
+    var five = JsonAstNode{ .lit = .{ .val = "5", .type_name = .i32 } };
+    var decl_x = JsonAstNode{ .assign = .{ .nam = "x", .val = &five, .is_mut = true, .type_name = .i32 } };
+
+    var load_x_for_mut_borrow = JsonAstNode{ .nam = "x" };
+    var borrow_x_mut = JsonAstNode{ .borrow_mut = .{ .sym = .{ .borrow_mut = .BorrowAttr }, .first = &load_x_for_mut_borrow } };
+    var decl_y = JsonAstNode{ .assign = .{ .nam = "y", .val = &borrow_x_mut, .is_mut = false, .type_name = null } };
+
+    var use_x = JsonAstNode{ .nam = "x" }; // Attempt to use x
+
+    var statements_slice = [_]*JsonAstNode{
+        &decl_x,
+        &decl_y, // Mutable borrow happens here
+        &use_x, // Use x here -> Error
+    };
+    const program = JsonAstNode{ .seq = .{ .stmts = &statements_slice } };
+
+    // Compile and expect error
+    std.debug.print("Expecting type error for use while mutably borrowed...\n", .{});
+    try testing.expectError(CompileErrors.BorrowConflictMutable, compiler.compileProgram(&program));
 }
