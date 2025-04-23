@@ -72,7 +72,7 @@ pub const TypeChecker = struct {
             .neg => return CompileErrors.UnimplementedAstNode,
             .question => return CompileErrors.UnimplementedAstNode,
             .seq => |seq_data| self.checkSeq(seq_data.stmts),
-            .blk => return CompileErrors.UnimplementedAstNode,
+            .blk => |blk_data| self.checkBlk(blk_data.body),
             .assign => |assign_data| self.checkAssign(assign_data.nam, assign_data.val, assign_data.is_mut, assign_data.type_name),
             .reassign => return CompileErrors.UnimplementedAstNode,
             .compound_assign => return CompileErrors.UnimplementedAstNode,
@@ -185,6 +185,12 @@ pub const TypeChecker = struct {
 
         // Assignment statement itself has Unit type
         return SymbolInfo.unit();
+    }
+
+    fn checkBlk(self: *TypeChecker, body: *JsonAstNode) !SymbolInfo {
+        try self.env.pushFrame();
+        defer self.env.popFrame();
+        return try self.check(body);
     }
 
     fn checkFunc(self: *TypeChecker, nam: []const u8, params: []Param, body: ?*JsonAstNode, return_type: ?TypeName) !SymbolInfo {
