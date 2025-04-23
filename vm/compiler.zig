@@ -1,6 +1,7 @@
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 const types = @import("types.zig");
+const TypeChecker = @import("type_checker.zig").TypeChecker;
 
 const LiteralVal = types.LiteralVal; // Use LiteralVal
 const TypeName = types.TypeName; // Import TypeName
@@ -16,11 +17,13 @@ const Instruction = types.Instruction;
 pub const Compiler = struct {
     alloc: Allocator,
     instructions: std.ArrayList(Instruction),
+    type_checker: TypeChecker,
 
     pub fn init(alloc: Allocator) Compiler {
         return .{
             .alloc = alloc,
             .instructions = std.ArrayList(Instruction).init(alloc),
+            .type_checker = TypeChecker.init(alloc),
         };
     }
 
@@ -52,6 +55,7 @@ pub const Compiler = struct {
             }
         }
         self.instructions.deinit();
+        self.type_checker.deinit();
     }
 
     fn addInstr(self: *Compiler, instruction: Instruction) !void {
@@ -532,6 +536,7 @@ pub const Compiler = struct {
 
     pub fn compileProgram(self: *Compiler, program_node: *const JsonAstNode) !void {
         // Compile the main program node
+        _ = try self.type_checker.check(program_node);
         try self.compile(program_node);
         // Add the final Done instruction
         try self.addInstr(.Done);

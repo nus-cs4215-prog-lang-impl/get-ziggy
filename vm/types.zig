@@ -13,6 +13,27 @@ pub const TypeName = enum {
     Bool,
     Undefined,
 
+    pub fn isNumeric(self: TypeName) bool {
+        return switch (self) {
+            .i32, .i64, .u32, .u64, .f64 => true,
+            else => false,
+        };
+    }
+
+    pub fn isInteger(self: TypeName) bool {
+        return switch (self) {
+            .i32, .i64, .u32, .u64 => true,
+            else => false,
+        };
+    }
+
+    pub fn isSignedInteger(self: TypeName) bool {
+        return switch (self) {
+            .i32, .i64 => true,
+            else => false,
+        };
+    }
+
     pub fn jsonStringify(self: TypeName, writer: anytype) !void {
         try writer.write(switch (self) {
             .i32 => "i32",
@@ -40,6 +61,12 @@ pub const TypeName = enum {
         if (std.mem.eql(u8, str, "undefined")) return .Undefined;
         return error.InvalidEnumTag;
     }
+};
+
+pub const LifetimeId = usize;
+pub const FunctionSignature = struct {
+    params: []Param,
+    return_type: ?TypeName,
 };
 
 pub const LiteralVal = struct {
@@ -446,14 +473,30 @@ pub const BinaryOperation = struct {
     second: *JsonAstNode,
 };
 
-pub const Param = struct { nam: []const u8, type_name: TypeName };
+pub const Param = struct {
+    nam: []const u8,
+    type_name: TypeName,
+    is_mut: bool = false,
+};
 
 pub const ControlOperation = struct { body: ?*JsonAstNode };
 
 // Explicit Error Set
 pub const CompileErrors = error{
-    UnimplementedAstNode,
+    ArgumentCountMismatch,
+    AssignmentIsBorrowed,
+    BorrowConflictImmutable,
+    BorrowConflictMutable,
+    InvalidOperation,
+    MutationOfImmutable,
     OutOfMemory,
+    ReadOfMutablyBorrowed,
+    ShortLivedBorrow,
+    SymbolAlreadyDeclared,
+    TypeMismatch,
+    UnboundName,
+    UnimplementedAstNode,
+    UnimplementedInstruction,
 };
 
 pub const JsonAstNode = union(enum) {
