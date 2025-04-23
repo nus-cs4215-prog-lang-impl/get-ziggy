@@ -3,6 +3,7 @@ const Allocator = std.mem.Allocator;
 const types = @import("types.zig");
 const TypeName = types.TypeName;
 const FunctionSignature = types.FunctionSignature;
+const CompileErrors = types.CompileErrors;
 
 const StringHashMap = std.StringHashMap;
 
@@ -12,6 +13,12 @@ pub const SymbolInfo = struct {
     type_name: TypeName,
     is_mut: bool,
     func_sig: ?FunctionSignature = null,
+
+    // Borrow Stuff
+    borrow_count_imm: u32 = 0, // Number of immutable borrows
+    is_borrow_mut: bool = false, // check if variable is curently mutably borrowed
+    is_reference: bool = false,
+    is_ref_mut: bool = false,
 
     pub fn baseType(self: SymbolInfo) TypeName {
         return self.type_name; // Assumes type_name stores the underlying type T for &T, &mut T etc.
@@ -31,6 +38,18 @@ pub const SymbolInfo = struct {
 
     pub fn isFunc(self: SymbolInfo) bool {
         return self.func_sig != null;
+    }
+
+    pub fn createRef(pointed_to_type: TypeName, is_mut_ref: bool) SymbolInfo {
+        return .{
+            .type_name = pointed_to_type,
+            .is_mut = false,
+            .is_reference = true,
+            .is_ref_mut = is_mut_ref,
+            .func_sig = null,
+            .borrow_count_imm = 0,
+            .is_borrow_mut = false,
+        };
     }
 };
 
@@ -126,5 +145,85 @@ pub const TypeEnvironment = struct {
             @panic("Attempted to access current frame from empty environment");
         }
         return &self.frames.items[self.frames.items.len - 1];
+    }
+
+    fn lookupMut(self: *TypeEnvironment, name: []const u8) ?*SymbolInfo {
+        var i = self.frames.items.len;
+        while (i > 0) {
+            i -= 1;
+            const frame = &self.frames.items[i];
+            // Use getPtr to get a mutable pointer if the key exists
+            if (frame.getPtr(name)) |info_ptr| {
+                return info_ptr;
+            }
+        }
+        return null;
+    }
+
+    pub fn incrementImmutableBorrow(self: *TypeEnvironment, name: []const u8) CompileErrors!void {
+        if (self.lookupMut(name)) |info_ptr| {
+            if (info_ptr.is_borrow_mut) {
+                std.debug.print("Borrow Error: Cannot borrow '{s}' as immutable because it is already mutably borrowed.\n", .{name});
+                return error.BorrowConflictMutable;
+            }
+            info_ptr.borrow_count_imm += 1;
+            std.debug.print("Incremented immutable borrow count for '{s}' to {d}.\n", .{ name, info_ptr.borrow_count_imm });
+        } else {
+            std.debug.print("Internal Error: Failed to find '{s}' to increment borrow count.\n", .{name});
+            return error.UnboundName; // Should not happen if called after a successful lookup
+        }
+    }
+
+    pub fn decrementImmutableBorrow(self: *TypeEnvironment, name: []const u8) CompileErrors!void {
+        if (self.lookupMut(name)) |info_ptr| {
+            if (info_ptr.borrow_count_imm == 0) {
+                std.debug.print("Internal Warning: Attempted to decrement immutable borrow count for '{s}' when it was already zero.\n", .{name});
+                // This might indicate a logic error in borrow tracking or lifetime management
+            } else {
+                info_ptr.borrow_count_imm -= 1;
+                std.debug.print("Decremented immutable borrow count for '{s}' to {d}.\n", .{ name, info_ptr.borrow_count_imm });
+            }
+        } else {
+            std.debug.print("Internal Error: Failed to find '{s}' to decrement borrow count.\n", .{name});
+            return error.UnboundName;
+        }
+    }
+
+    pub fn setMutableBorrow(self: *TypeEnvironment, name: []const u8) CompileErrors!void {
+        if (self.lookupMut(name)) |info_ptr| {
+            if (info_ptr.is_borrow_mut) {
+                std.debug.print("Borrow Error: Cannot borrow '{s}' as mutable because it is already mutably borrowed.\n", .{name});
+                return error.BorrowConflictMutable;
+            }
+            if (info_ptr.borrow_count_imm > 0) {
+                std.debug.print("Borrow Error: Cannot borrow '{s}' as mutable because it is already immutably borrowed ({d} times).\n", .{ name, info_ptr.borrow_count_imm });
+                return error.BorrowConflictImmutable;
+            }
+            if (!info_ptr.is_mut) {
+                // Check if the original variable binding allows mutation
+                std.debug.print("Borrow Error: Cannot mutably borrow immutable variable '{s}'.\n", .{name});
+                return error.MutationOfImmutable;
+            }
+            info_ptr.is_borrow_mut = true;
+            std.debug.print("Set mutable borrow flag for '{s}'.\n", .{name});
+        } else {
+            std.debug.print("Internal Error: Failed to find '{s}' to set mutable borrow.\n", .{name});
+            return error.UnboundName;
+        }
+    }
+
+    pub fn releaseMutableBorrow(self: *TypeEnvironment, name: []const u8) CompileErrors!void {
+        if (self.lookupMut(name)) |info_ptr| {
+            if (!info_ptr.is_borrow_mut) {
+                std.debug.print("Internal Warning: Attempted to release mutable borrow for '{s}' when it was not mutably borrowed.\n", .{name});
+                // This might indicate a logic error
+            } else {
+                info_ptr.is_borrow_mut = false;
+                std.debug.print("Released mutable borrow flag for '{s}'.\n", .{name});
+            }
+        } else {
+            std.debug.print("Internal Error: Failed to find '{s}' to release mutable borrow.\n", .{name});
+            return error.UnboundName;
+        }
     }
 };

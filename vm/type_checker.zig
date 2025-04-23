@@ -66,15 +66,15 @@ pub const TypeChecker = struct {
             .comp => |bin_op| self.checkComp(bin_op),
             .logic => |bin_op| self.checkLogic(bin_op),
             .arith => |bin_op| self.checkArith(bin_op),
-            .borrow => return CompileErrors.UnimplementedAstNode,
-            .borrow_mut => return CompileErrors.UnimplementedAstNode,
+            .borrow => |borrow_data| self.checkBorrow(borrow_data.first),
+            .borrow_mut => |check_data| self.checkBorrowMut(check_data.first),
             .deref => return CompileErrors.UnimplementedAstNode,
             .neg => return CompileErrors.UnimplementedAstNode,
             .question => return CompileErrors.UnimplementedAstNode,
             .seq => |seq_data| self.checkSeq(seq_data.stmts),
             .blk => |blk_data| self.checkBlk(blk_data.body),
             .assign => |assign_data| self.checkAssign(assign_data.nam, assign_data.val, assign_data.is_mut, assign_data.type_name),
-            .reassign => return CompileErrors.UnimplementedAstNode,
+            .reassign => |reassign_data| self.checkReassign(reassign_data.first, reassign_data.second),
             .compound_assign => return CompileErrors.UnimplementedAstNode,
             .type_cast => return CompileErrors.UnimplementedAstNode,
             .cond => return CompileErrors.UnimplementedAstNode,
@@ -96,6 +96,10 @@ pub const TypeChecker = struct {
     fn checkVal(self: *TypeChecker, nam: []const u8) !SymbolInfo {
         std.debug.print("Checking value: {s}\n", .{nam});
         if (self.env.lookup(nam)) |symbol_info| {
+            if (symbol_info.is_borrow_mut) {
+                std.debug.print("Borrow Error: Cannot use '{s}' because it is currently mutably borrowed.\n", .{nam});
+                return error.ReadOfMutablyBorrowed;
+            }
             return symbol_info;
         } else {
             std.debug.print("Type Error: Unbound name '{s}'.\n", .{nam});
@@ -187,6 +191,38 @@ pub const TypeChecker = struct {
         return SymbolInfo.unit();
     }
 
+    fn checkReassign(self: *TypeChecker, first: *JsonAstNode, second: *JsonAstNode) !SymbolInfo {
+        const target_name = switch (first.*) {
+            .nam => |n| n,
+            else => {
+                std.debug.print("Type Error: Left-hand side of assignment must be a variable name.\n", .{});
+                return error.InvalidOperation;
+            },
+        };
+
+        const target_info = try self.checkVal(target_name);
+
+        // Borrow Checking
+        if (target_info.is_borrow_mut or target_info.borrow_count_imm > 0) {
+            std.debug.print("Type Error: Cannot assign to borrowed variable '{s}'.\n", .{target_name});
+            return error.AssignmentIsBorrowed;
+        }
+
+        if (!target_info.is_mut) {
+            std.debug.print("Type Error: Cannot assign to immutable variable '{s}'.\n", .{target_name});
+            return error.MutationOfImmutable;
+        }
+
+        const val_info = try self.check(second);
+
+        if (target_info.baseType() != val_info.baseType()) {
+            std.debug.print("Type Error: Cannot assign value of type '{any}' to variable '{s}' of type '{any}'.\n", .{ val_info.baseType(), target_name, target_info.baseType() });
+            return error.TypeMismatch;
+        }
+
+        return SymbolInfo.unit();
+    }
+
     fn checkBlk(self: *TypeChecker, body: *JsonAstNode) !SymbolInfo {
         try self.env.pushFrame();
         defer self.env.popFrame();
@@ -250,5 +286,37 @@ pub const TypeChecker = struct {
             std.debug.print("Type Error: Unbound name '{s}'.\n", .{nam});
             return error.UnboundName;
         }
+    }
+
+    fn checkBorrow(self: *TypeChecker, first: *JsonAstNode) !SymbolInfo {
+        const target_name = switch (first.*) {
+            .nam => |n| n,
+            else => {
+                std.debug.print("Borrow Error: Cannot take immutable reference of a non-variable expression.\n", .{});
+                return error.InvalidOperation; // Or specific borrow error
+            },
+        };
+
+        const target_info = try self.checkVal(target_name);
+        try self.env.incrementImmutableBorrow(target_name);
+
+        return SymbolInfo.createRef(target_info.baseType(), false);
+    }
+
+    fn checkBorrowMut(self: *TypeChecker, val_node: *const JsonAstNode) !SymbolInfo {
+        const target_name = switch (val_node.*) {
+            .nam => |n| n,
+            else => {
+                std.debug.print("Borrow Error: Cannot take mutable reference of a non-variable expression.\n", .{});
+                return error.InvalidOperation;
+            },
+        };
+
+        const target_info = try self.checkVal(target_name);
+
+        try self.env.setMutableBorrow(target_name);
+        // TODO: Lifetime start.
+
+        return SymbolInfo.createRef(target_info.baseType(), true);
     }
 };

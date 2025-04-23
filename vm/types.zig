@@ -490,6 +490,11 @@ pub const CompileErrors = error{
     InvalidOperation,
     SymbolAlreadyDeclared,
     ArgumentCountMismatch,
+    AssignmentIsBorrowed,
+    MutationOfImmutable,
+    ReadOfMutablyBorrowed,
+    BorrowConflictMutable,
+    BorrowConflictImmutable,
 };
 
 pub const JsonAstNode = union(enum) {
