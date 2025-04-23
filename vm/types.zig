@@ -63,6 +63,11 @@ pub const TypeName = enum {
     }
 };
 
+pub const FunctionSignature = struct {
+    params: []Param,
+    return_type: ?TypeName,
+};
+
 pub const LiteralVal = struct {
     val: []const u8,
     type_name: TypeName,
@@ -467,7 +472,11 @@ pub const BinaryOperation = struct {
     second: *JsonAstNode,
 };
 
-pub const Param = struct { nam: []const u8, type_name: TypeName };
+pub const Param = struct {
+    nam: []const u8,
+    type_name: TypeName,
+    is_mut: bool = false,
+};
 
 pub const ControlOperation = struct { body: ?*JsonAstNode };
 
@@ -480,6 +489,7 @@ pub const CompileErrors = error{
     TypeMismatch,
     InvalidOperation,
     SymbolAlreadyDeclared,
+    ArgumentCountMismatch,
 };
 
 pub const JsonAstNode = union(enum) {

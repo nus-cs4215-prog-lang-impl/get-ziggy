@@ -7,6 +7,7 @@ const types = @import("types.zig");
 const BinaryOperation = types.BinaryOperation;
 const BinaryOperator = types.BinaryOperator;
 const CompileErrors = types.CompileErrors;
+const FunctionSignature = types.FunctionSignature;
 const JsonAstNode = types.JsonAstNode;
 const LiteralVal = types.LiteralVal;
 const LogicalOperator = types.LogicalOperator;
@@ -56,13 +57,12 @@ pub const TypeChecker = struct {
     }
 
     // Check function now returns the type info or an error
-    // ai? why is checkassign running twice when i try and check a statement, let x = 1 + 2;x
     pub fn check(self: *TypeChecker, node: *const JsonAstNode) CompileErrors!SymbolInfo {
         return switch (node.*) {
             .lit => |lit_data| return self.checkLit(lit_data),
             .nam => |name| return self.checkVal(name),
-            .fun => return CompileErrors.UnimplementedAstNode,
-            .app => return CompileErrors.UnimplementedAstNode,
+            .fun => |fun_data| return self.checkFunc(fun_data.nam, fun_data.params, fun_data.body, fun_data.return_type),
+            .app => |app_data| return self.checkApp(app_data.nam, app_data.args),
             .comp => |bin_op| self.checkComp(bin_op),
             .logic => |bin_op| self.checkLogic(bin_op),
             .arith => |bin_op| self.checkArith(bin_op),
@@ -181,9 +181,68 @@ pub const TypeChecker = struct {
         }
 
         // std.debug.print("Assigning '{s}' type '{any}' (mut: {any})\n", .{ nam, assigned_type, is_mut });
-        try self.env.addBinding(nam, assigned_type, is_mut);
+        try self.env.addBinding(nam, SymbolInfo.create(assigned_type, is_mut));
 
         // Assignment statement itself has Unit type
         return SymbolInfo.unit();
+    }
+
+    fn checkFunc(self: *TypeChecker, nam: []const u8, params: []Param, body: ?*JsonAstNode, return_type: ?TypeName) !SymbolInfo {
+        const signature = FunctionSignature{
+            .params = params,
+            .return_type = return_type,
+        };
+
+        try self.env.addBinding(nam, SymbolInfo.createFunc(signature));
+        if (body) |body_node| {
+            try self.env.pushFrame(); // Create a new frame
+            defer self.env.popFrame();
+
+            // NOTE: We're pushing the params into the same frame
+            for (params) |param| {
+                try self.env.addBinding(param.nam, SymbolInfo.create(param.type_name, param.is_mut));
+            }
+
+            const return_info = try self.check(body_node);
+            if (return_type) |expected_type| {
+                if (return_info.baseType() != expected_type) {
+                    std.debug.print("Type Error: Function '{s}' expected return type '{any}', found '{any}'.\n", .{ nam, expected_type, return_info.baseType() });
+                    return error.TypeMismatch;
+                }
+            }
+        }
+        return SymbolInfo.unit();
+    }
+
+    fn checkApp(self: *TypeChecker, nam: []const u8, args: []*JsonAstNode) !SymbolInfo {
+        if (self.env.lookup(nam)) |symbol_info| {
+            if (!symbol_info.isFunc()) {
+                std.debug.print("Type Error: '{s}' is not a function.\n", .{nam});
+                return error.InvalidOperation;
+            }
+            const func_sig = symbol_info.func_sig.?;
+            // check arity
+            if (args.len != func_sig.params.len) {
+                std.debug.print("Type Error: Function '{s}' expected {d} arguments, found {d}.\n", .{ nam, func_sig.params.len, args.len });
+                return error.ArgumentCountMismatch;
+            }
+
+            for (args, func_sig.params) |arg, param| {
+                const arg_info = try self.check(arg);
+                if (arg_info.baseType() != param.type_name) {
+                    std.debug.print("Type Error: Argument type '{any}' does not match expected type '{any}' for parameter '{s}'.\n", .{ arg_info.baseType(), param.type_name, param.nam });
+                    return error.TypeMismatch;
+                }
+            }
+
+            if (func_sig.return_type) |return_type| {
+                return SymbolInfo.create(return_type, false);
+            } else {
+                return SymbolInfo.unit();
+            }
+        } else {
+            std.debug.print("Type Error: Unbound name '{s}'.\n", .{nam});
+            return error.UnboundName;
+        }
     }
 };

@@ -22,6 +22,15 @@ fn expectLiteralValEqual(expected: LiteralVal, actual: LiteralVal) !void {
     try testing.expectEqualStrings(expected.val, actual.val);
 }
 
+// Helper to compare Param slices
+fn expectParamsEqual(expected: []const Param, actual: []const Param) !void {
+    try testing.expectEqual(expected.len, actual.len);
+    for (expected, actual) |exp, act| {
+        try testing.expectEqualStrings(exp.nam, act.nam);
+        try testing.expectEqual(exp.type_name, act.type_name);
+    }
+}
+
 test "compile simple program: let x = 1 + 2; x" {
     // Setup
     var compiler = Compiler.init(testing.allocator);
@@ -127,6 +136,104 @@ test "fn_decl_test" {
     try testing.expectEqual(Instruction.Done, instructions[5]); // Program end
 }
 
+test "fn apply test" {
+    // Setup
+    var compiler = Compiler.init(testing.allocator);
+    defer compiler.deinit();
+
+    // AST for:
+    // fn add(a: i32, b: i32) -> i32 { a + b }
+    // add(5, 3)
+
+    // Function Body: a + b
+    var load_a = JsonAstNode{ .nam = "a" };
+    var load_b = JsonAstNode{ .nam = "b" };
+    var add_body = JsonAstNode{ .arith = .{ .sym = .{ .arith = .Add }, .first = &load_a, .second = &load_b } };
+
+    // Function Declaration
+    var params = [_]Param{
+        .{ .nam = "a", .type_name = .i32 },
+        .{ .nam = "b", .type_name = .i32 },
+    };
+    var fn_decl = JsonAstNode{ .fun = .{
+        .nam = "add",
+        .params = &params,
+        .body = &add_body,
+        .return_type = .i32,
+    } };
+
+    // Function Call Arguments
+    var five = JsonAstNode{ .lit = .{ .val = "5", .type_name = .i32 } };
+    var three = JsonAstNode{ .lit = .{ .val = "3", .type_name = .i32 } };
+    var args_slice = [_]*JsonAstNode{ &five, &three };
+
+    // Function Call
+    var fn_call = JsonAstNode{
+        .app = .{
+            .nam = "add",
+            .args = &args_slice,
+        },
+    };
+
+    // Program Sequence
+    var statements_slice = [_]*JsonAstNode{
+        &fn_decl,
+        &fn_call,
+    };
+    const program = JsonAstNode{ .seq = .{ .stmts = &statements_slice } };
+
+    // Compile
+    try compiler.compileProgram(&program);
+
+    // Verify Instructions
+    std.debug.print("Generated Instructions (fn apply test):\n", .{});
+    try compiler.printCompiledMicrocode();
+
+    // Expected Instructions:
+    // 0: Goto 5      (Skip function body)
+    // --- Function Body ---
+    // 1: Ld "a"
+    // 2: Ld "b"
+    // 3: Binop Add
+    // 4: Reset       (Return from function)
+    // --- After Body ---
+    // 5: Ldf { params: [a, b], addr: 1 } (Load function object)
+    // 6: Assign "add" (Assign function to name)
+    // 7: Pop         (Pop result of assignment statement)
+    // --- Function Call ---
+    // 8: Ldc "5"     (Load arg 1)
+    // 9: Ldc "3"     (Load arg 2)
+    // 10: Ld "add"    (Load function object to call)
+    // 11: Apply 2     (Call function with 2 args)
+    // --- End ---
+    // 12: Done        (Program end, result of call is on stack)
+
+    const instructions = compiler.instructions.items;
+    try testing.expectEqual(@as(usize, 13), instructions.len);
+
+    // Function Definition Part
+    try testing.expectEqual(Instruction{ .Goto = 5 }, instructions[0]);
+    try testing.expectEqualStrings("a", instructions[1].Ld);
+    try testing.expectEqualStrings("b", instructions[2].Ld);
+    try testing.expectEqual(Instruction{ .Binop = .{ .arith = .Add } }, instructions[3]);
+    try testing.expectEqual(Instruction.Reset, instructions[4]);
+    // Check Ldf
+    try testing.expectEqual(@as(usize, 1), instructions[5].Ldf.addr);
+    try expectParamsEqual(&params, instructions[5].Ldf.params);
+    // Check Assign
+    try testing.expectEqualStrings("add", instructions[6].Assign);
+    // Check Pop
+    try testing.expectEqual(Instruction.Pop, instructions[7]);
+
+    // Function Call Part
+    try testing.expectEqualStrings("add", instructions[8].Ld);
+    try expectLiteralValEqual(LiteralVal{ .val = "5", .type_name = .i32 }, instructions[9].Ldc);
+    try expectLiteralValEqual(LiteralVal{ .val = "3", .type_name = .i32 }, instructions[10].Ldc);
+
+    // End
+    try testing.expectEqual(Instruction.Done, instructions[12]);
+}
+
 test "logical_test" {
     // Setup
     var compiler = Compiler.init(testing.allocator);
@@ -161,8 +268,8 @@ test "logical_test" {
     // --- end and --- (result is false)
     // 4: Pop        (pop result of 'and' statement)
     // 5: Ldc "true" (or left)
-    // 6: Jof 9      (or jump if false to instruction 9)
-    // 7: Goto 11    (or jump to end if true - instruction 11)
+    // 6: Jof 9      (or jump if false to instruction 9) -> Should be Jof 8
+    // 7: Goto 10    (or jump to end if true - instruction 10) -> Should be Goto 10
     // --- jump target for Jof ---
     // 8: Pop        (or pop false)
     // 9: Ldc "false" (or right)

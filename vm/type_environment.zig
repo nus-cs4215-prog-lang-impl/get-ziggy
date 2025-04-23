@@ -2,6 +2,7 @@ const std = @import("std");
 const Allocator = std.mem.Allocator;
 const types = @import("types.zig");
 const TypeName = types.TypeName;
+const FunctionSignature = types.FunctionSignature;
 
 const StringHashMap = std.StringHashMap;
 
@@ -10,6 +11,7 @@ const StringHashMap = std.StringHashMap;
 pub const SymbolInfo = struct {
     type_name: TypeName,
     is_mut: bool,
+    func_sig: ?FunctionSignature = null,
 
     pub fn baseType(self: SymbolInfo) TypeName {
         return self.type_name; // Assumes type_name stores the underlying type T for &T, &mut T etc.
@@ -19,8 +21,16 @@ pub const SymbolInfo = struct {
         return .{ .type_name = type_name, .is_mut = is_mut };
     }
 
+    pub fn createFunc(func_sig: FunctionSignature) SymbolInfo {
+        return .{ .type_name = .Undefined, .is_mut = false, .func_sig = func_sig };
+    }
+
     pub fn unit() SymbolInfo {
         return .{ .type_name = TypeName.Undefined, .is_mut = false };
+    }
+
+    pub fn isFunc(self: SymbolInfo) bool {
+        return self.func_sig != null;
     }
 };
 
@@ -55,20 +65,21 @@ pub const TypeEnvironment = struct {
 
     pub fn popFrame(self: *TypeEnvironment) void {
         if (self.frames.items.len > 0) {
-            var frame = self.frames.pop();
-            frame.deinit();
+            _ = self.frames.pop();
+            // NOTE: Zig isn't letting me free because this is an optional/const
+            // if (self.frames.pop()) |frame| {
+            //     frame.deinit();
+            // }
             std.debug.print("Reduce scope. Depth: {}\n", .{self.frames.items.len});
         } else {
             @panic("Attempted to pop frame from empty or global-only environment");
         }
     }
 
-    pub fn addBinding(self: *TypeEnvironment, name: []const u8, type_name: TypeName, is_mut: bool) !void {
+    pub fn addBinding(self: *TypeEnvironment, name: []const u8, symbol_info: SymbolInfo) !void {
         const current_frame = self.currentFrame();
         const owned_name = try self.alloc.dupe(u8, name);
         errdefer self.alloc.free(owned_name); // Free if put fails
-
-        const info = SymbolInfo{ .type_name = type_name, .is_mut = is_mut };
 
         if (current_frame.contains(owned_name)) {
             std.debug.print("Type Error: Redeclaration of '{s}' in the same scope.\n", .{owned_name});
@@ -79,8 +90,14 @@ pub const TypeEnvironment = struct {
         }
 
         // If put fails, errdefer will free owned_name.
-        try current_frame.put(owned_name, info);
-        std.debug.print("Declared '{s}' (type: {any}, mut: {any}) in current frame.\n", .{ owned_name, type_name, is_mut });
+        try current_frame.put(owned_name, symbol_info);
+
+        // Debug prints
+        if (symbol_info.isFunc()) {
+            std.debug.print("Declared '{s}' (type: {any}, mut: {any}, func: {any}) in current frame.\n", .{ owned_name, symbol_info.type_name, symbol_info.is_mut, symbol_info.func_sig });
+        } else {
+            std.debug.print("Declared '{s}' (type: {any}, mut: {any}) in current frame.\n", .{ owned_name, symbol_info.type_name, symbol_info.is_mut });
+        }
     }
 
     pub fn lookup(self: *const TypeEnvironment, name: []const u8) ?SymbolInfo {
