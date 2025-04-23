@@ -7,6 +7,8 @@ const compile = @import("compiler.zig");
 const LiteralVal = types.LiteralVal; // Use LiteralVal
 const TypeName = types.TypeName; // Import TypeName
 const UnaryOperator = types.UnaryOperator;
+const BorrowOperator = types.BorrowOperator;
+const BorrowAttr = types.BorrowAttr;
 const BinaryOperator = types.BinaryOperator;
 const LogicalOperator = types.LogicalOperator;
 const Param = types.Param;
@@ -201,10 +203,10 @@ test "fn apply test" {
     // 6: Assign "add" (Assign function to name)
     // 7: Pop         (Pop result of assignment statement)
     // --- Function Call ---
-    // 8: Ldc "5"     (Load arg 1)
-    // 9: Ldc "3"     (Load arg 2)
-    // 10: Ld "add"    (Load function object to call)
-    // 11: Apply 2     (Call function with 2 args)
+    // 8: Ld "add"    (Load function object to call) <- Swapped order with args
+    // 9: Ldc "5"     (Load arg 1)
+    // 10: Ldc "3"     (Load arg 2)
+    // 11: Call 2     (Call function with 2 args)
     // --- End ---
     // 12: Done        (Program end, result of call is on stack)
 
@@ -226,9 +228,10 @@ test "fn apply test" {
     try testing.expectEqual(Instruction.Pop, instructions[7]);
 
     // Function Call Part
-    try testing.expectEqualStrings("add", instructions[8].Ld);
-    try expectLiteralValEqual(LiteralVal{ .val = "5", .type_name = .i32 }, instructions[9].Ldc);
-    try expectLiteralValEqual(LiteralVal{ .val = "3", .type_name = .i32 }, instructions[10].Ldc);
+    try testing.expectEqualStrings("add", instructions[8].Ld); // Load function first
+    try expectLiteralValEqual(LiteralVal{ .val = "5", .type_name = .i32 }, instructions[9].Ldc); // Arg 1
+    try expectLiteralValEqual(LiteralVal{ .val = "3", .type_name = .i32 }, instructions[10].Ldc); // Arg 2
+    try testing.expectEqual(Instruction{ .Call = .{ .arity = 2 } }, instructions[11]); // Call
 
     // End
     try testing.expectEqual(Instruction.Done, instructions[12]);
@@ -294,4 +297,136 @@ test "logical_test" {
     try expectLiteralValEqual(LiteralVal{ .val = "false", .type_name = .Bool }, instructions[9].Ldc);
     // Done
     try testing.expectEqual(Instruction.Done, instructions[10]);
+}
+
+test "borrow immutable test" {
+    // Setup
+    var compiler = Compiler.init(testing.allocator);
+    defer compiler.deinit();
+
+    // AST for: let x: i32 = 5; let y = &x; y
+    var five = JsonAstNode{ .lit = .{ .val = "5", .type_name = .i32 } };
+    var decl_x = JsonAstNode{ .assign = .{ .nam = "x", .val = &five, .is_mut = false, .type_name = .i32 } };
+    var load_x_for_borrow = JsonAstNode{ .nam = "x" };
+    var borrow_x = JsonAstNode{ .borrow = .{ .sym = .{ .borrow = .Borrow }, .first = &load_x_for_borrow } };
+    var decl_y = JsonAstNode{ .assign = .{ .nam = "y", .val = &borrow_x, .is_mut = false, .type_name = null } }; // Type inferred
+    var load_y = JsonAstNode{ .nam = "y" };
+
+    var statements_slice = [_]*JsonAstNode{
+        &decl_x,
+        &decl_y,
+        &load_y,
+    };
+    const program = JsonAstNode{ .seq = .{ .stmts = &statements_slice } };
+
+    // Compile
+    try compiler.compileProgram(&program);
+
+    // Verify Instructions
+    std.debug.print("Generated Instructions (borrow immutable test):\n", .{});
+    try compiler.printCompiledMicrocode();
+
+    // Expected:
+    // 0: Ldc 5       (value for x)
+    // 1: Assign "x"
+    // 2: Pop         (result of assign)
+    // 3: Ld "x"       (value for borrow)
+    // 4: Unop Borrow (create immutable borrow)
+    // 5: Assign "y"
+    // 6: Pop         (result of assign)
+    // 7: Ld "y"       (final expression)
+    // 8: Done
+    const instructions = compiler.instructions.items;
+    try testing.expectEqual(@as(usize, 9), instructions.len);
+
+    try expectLiteralValEqual(LiteralVal{ .val = "5", .type_name = .i32 }, instructions[0].Ldc);
+    try testing.expectEqualStrings("x", instructions[1].Assign);
+    try testing.expectEqual(Instruction.Pop, instructions[2]);
+    try testing.expectEqualStrings("x", instructions[3].Ld);
+    try testing.expectEqual(Instruction{ .Unop = .{ .borrow = .Borrow } }, instructions[4]);
+    try testing.expectEqualStrings("y", instructions[5].Assign);
+    try testing.expectEqual(Instruction.Pop, instructions[6]);
+    try testing.expectEqualStrings("y", instructions[7].Ld);
+    try testing.expectEqual(Instruction.Done, instructions[8]);
+}
+
+test "borrow mutable test" {
+    // Setup
+    var compiler = Compiler.init(testing.allocator);
+    defer compiler.deinit();
+
+    // AST for: let mut x: i32 = 5; let y = &mut x; y
+    var five = JsonAstNode{ .lit = .{ .val = "5", .type_name = .i32 } };
+    var decl_x = JsonAstNode{ .assign = .{ .nam = "x", .val = &five, .is_mut = true, .type_name = .i32 } }; // x is mutable
+    var load_x_for_borrow = JsonAstNode{ .nam = "x" };
+    var borrow_mut_x = JsonAstNode{ .borrow_mut = .{ .sym = .{ .borrow_mut = .BorrowAttr }, .first = &load_x_for_borrow } };
+    var decl_y = JsonAstNode{ .assign = .{ .nam = "y", .val = &borrow_mut_x, .is_mut = false, .type_name = null } }; // Type inferred
+    var load_y = JsonAstNode{ .nam = "y" };
+
+    var statements_slice = [_]*JsonAstNode{
+        &decl_x,
+        &decl_y,
+        &load_y,
+    };
+    const program = JsonAstNode{ .seq = .{ .stmts = &statements_slice } };
+
+    // Compile
+    try compiler.compileProgram(&program);
+
+    // Verify Instructions
+    std.debug.print("Generated Instructions (borrow mutable test):\n", .{});
+    try compiler.printCompiledMicrocode();
+
+    // Expected:
+    // 0: Ldc 5       (value for x)
+    // 1: Assign "x"
+    // 2: Pop         (result of assign)
+    // 3: Ld "x"       (value for borrow)
+    // 4: Unop BorrowMut (create mutable borrow)
+    // 5: Assign "y"
+    // 6: Pop         (result of assign)
+    // 7: Ld "y"       (final expression)
+    // 8: Done
+    const instructions = compiler.instructions.items;
+    try testing.expectEqual(@as(usize, 9), instructions.len);
+
+    try expectLiteralValEqual(LiteralVal{ .val = "5", .type_name = .i32 }, instructions[0].Ldc);
+    try testing.expectEqualStrings("x", instructions[1].Assign);
+    try testing.expectEqual(Instruction.Pop, instructions[2]);
+    try testing.expectEqualStrings("x", instructions[3].Ld);
+    try testing.expectEqual(Instruction{ .Unop = .{ .borrow_mut = .BorrowAttr } }, instructions[4]);
+    try testing.expectEqualStrings("y", instructions[5].Assign);
+    try testing.expectEqual(Instruction.Pop, instructions[6]);
+    try testing.expectEqualStrings("y", instructions[7].Ld);
+    try testing.expectEqual(Instruction.Done, instructions[8]);
+}
+
+test "borrow mutable fail" {
+    // Setup
+    var compiler = Compiler.init(testing.allocator);
+    defer compiler.deinit();
+
+    // AST for: let x: i32 = 5; let y = &mut x; y
+    // This should fail type checking because x is not mutable.
+    var five = JsonAstNode{ .lit = .{ .val = "5", .type_name = .i32 } };
+    var decl_x = JsonAstNode{ .assign = .{ .nam = "x", .val = &five, .is_mut = false, .type_name = .i32 } }; // x is NOT mutable
+    var load_x_for_borrow = JsonAstNode{ .nam = "x" };
+    var borrow_mut_x = JsonAstNode{ .borrow_mut = .{ .sym = .{ .borrow_mut = .BorrowAttr }, .first = &load_x_for_borrow } };
+    var decl_y = JsonAstNode{ .assign = .{ .nam = "y", .val = &borrow_mut_x, .is_mut = false, .type_name = null } };
+    var load_y = JsonAstNode{ .nam = "y" };
+
+    var statements_slice = [_]*JsonAstNode{
+        &decl_x,
+        &decl_y,
+        &load_y,
+    };
+    const program = JsonAstNode{ .seq = .{ .stmts = &statements_slice } };
+
+    // Compile and expect a type error
+    // The error should come from type_checker.check called within compileProgram
+    // Assuming the type checker returns MutationOfImmutable when trying to mutably borrow an immutable variable.
+    // NOTE: The exact error might depend on the implementation details of the type checker's borrow checking.
+    // Adjust the expected error if necessary.
+    std.debug.print("Expecting type error for mutable borrow of immutable variable...\n", .{});
+    try testing.expectError(CompileErrors.MutationOfImmutable, compiler.compileProgram(&program));
 }
