@@ -63,6 +63,7 @@ pub const TypeName = enum {
     }
 };
 
+pub const LifetimeId = usize;
 pub const FunctionSignature = struct {
     params: []Param,
     return_type: ?TypeName,
@@ -482,19 +483,20 @@ pub const ControlOperation = struct { body: ?*JsonAstNode };
 
 // Explicit Error Set
 pub const CompileErrors = error{
-    UnimplementedAstNode,
-    UnimplementedInstruction,
-    OutOfMemory,
-    UnboundName,
-    TypeMismatch,
-    InvalidOperation,
-    SymbolAlreadyDeclared,
     ArgumentCountMismatch,
     AssignmentIsBorrowed,
-    MutationOfImmutable,
-    ReadOfMutablyBorrowed,
-    BorrowConflictMutable,
     BorrowConflictImmutable,
+    BorrowConflictMutable,
+    InvalidOperation,
+    MutationOfImmutable,
+    OutOfMemory,
+    ReadOfMutablyBorrowed,
+    ShortLivedBorrow,
+    SymbolAlreadyDeclared,
+    TypeMismatch,
+    UnboundName,
+    UnimplementedAstNode,
+    UnimplementedInstruction,
 };
 
 pub const JsonAstNode = union(enum) {

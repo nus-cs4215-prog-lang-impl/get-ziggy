@@ -86,17 +86,13 @@ pub const TypeChecker = struct {
     }
 
     fn checkLit(self: *TypeChecker, lit: LiteralVal) !SymbolInfo {
-        _ = self;
-        return SymbolInfo{
-            .type_name = lit.type_name,
-            .is_mut = false,
-        };
+        return SymbolInfo.create(self.alloc, lit.type_name, false, self.env.currentLifetime());
     }
 
     fn checkVal(self: *TypeChecker, nam: []const u8) !SymbolInfo {
         std.debug.print("Checking value: {s}\n", .{nam});
         if (self.env.lookup(nam)) |symbol_info| {
-            if (symbol_info.is_borrow_mut) {
+            if (symbol_info.active_mutable_borrow != null) {
                 std.debug.print("Borrow Error: Cannot use '{s}' because it is currently mutably borrowed.\n", .{nam});
                 return error.ReadOfMutablyBorrowed;
             }
@@ -110,7 +106,7 @@ pub const TypeChecker = struct {
     fn checkLogic(self: *TypeChecker, bin_op: BinaryOperation) !SymbolInfo {
         try self.expectBoolean(bin_op.first);
         try self.expectBoolean(bin_op.second);
-        return SymbolInfo.create(.Bool, false);
+        return SymbolInfo.create(self.alloc, .Bool, false, self.env.currentLifetime());
     }
 
     fn checkComp(self: *TypeChecker, bin_op: BinaryOperation) !SymbolInfo {
@@ -133,7 +129,7 @@ pub const TypeChecker = struct {
             },
         }
 
-        return SymbolInfo.create(.Bool, false);
+        return SymbolInfo.create(self.alloc, .Bool, false, self.env.currentLifetime());
     }
 
     fn checkArith(self: *TypeChecker, bin_op: BinaryOperation) !SymbolInfo {
@@ -156,14 +152,14 @@ pub const TypeChecker = struct {
         }
 
         // Result type is the same as operands
-        return SymbolInfo.create(lhs_info.baseType(), false);
+        return SymbolInfo.create(self.alloc, lhs_info.baseType(), false, self.env.currentLifetime());
     }
 
     fn checkSeq(self: *TypeChecker, stmts: []*JsonAstNode) !SymbolInfo {
         if (stmts.len == 0) {
-            return SymbolInfo.unit();
+            return SymbolInfo.unit(self.alloc);
         }
-        var last_info = SymbolInfo.unit();
+        var last_info = SymbolInfo.unit(self.alloc);
         for (stmts) |stmt| {
             // std.debug.print("Checking statement: {any}\n", .{stmt.*});
             last_info = try self.check(stmt);
@@ -185,10 +181,10 @@ pub const TypeChecker = struct {
         }
 
         // std.debug.print("Assigning '{s}' type '{any}' (mut: {any})\n", .{ nam, assigned_type, is_mut });
-        try self.env.addBinding(nam, SymbolInfo.create(assigned_type, is_mut));
+        try self.env.addBinding(nam, SymbolInfo.create(self.alloc, assigned_type, is_mut, self.env.currentLifetime()));
 
         // Assignment statement itself has Unit type
-        return SymbolInfo.unit();
+        return SymbolInfo.unit(self.alloc);
     }
 
     fn checkReassign(self: *TypeChecker, first: *JsonAstNode, second: *JsonAstNode) !SymbolInfo {
@@ -203,7 +199,7 @@ pub const TypeChecker = struct {
         const target_info = try self.checkVal(target_name);
 
         // Borrow Checking
-        if (target_info.is_borrow_mut or target_info.borrow_count_imm > 0) {
+        if (target_info.active_immutable_borrows.items.len > 0) {
             std.debug.print("Type Error: Cannot assign to borrowed variable '{s}'.\n", .{target_name});
             return error.AssignmentIsBorrowed;
         }
@@ -220,7 +216,7 @@ pub const TypeChecker = struct {
             return error.TypeMismatch;
         }
 
-        return SymbolInfo.unit();
+        return SymbolInfo.unit(self.alloc);
     }
 
     fn checkBlk(self: *TypeChecker, body: *JsonAstNode) !SymbolInfo {
@@ -235,14 +231,14 @@ pub const TypeChecker = struct {
             .return_type = return_type,
         };
 
-        try self.env.addBinding(nam, SymbolInfo.createFunc(signature));
+        try self.env.addBinding(nam, SymbolInfo.createFunc(self.alloc, signature, self.env.currentLifetime()));
         if (body) |body_node| {
             try self.env.pushFrame(); // Create a new frame
             defer self.env.popFrame();
 
             // NOTE: We're pushing the params into the same frame
             for (params) |param| {
-                try self.env.addBinding(param.nam, SymbolInfo.create(param.type_name, param.is_mut));
+                try self.env.addBinding(param.nam, SymbolInfo.create(self.alloc, param.type_name, param.is_mut, self.env.currentLifetime()));
             }
 
             const return_info = try self.check(body_node);
@@ -253,7 +249,7 @@ pub const TypeChecker = struct {
                 }
             }
         }
-        return SymbolInfo.unit();
+        return SymbolInfo.unit(self.alloc);
     }
 
     fn checkApp(self: *TypeChecker, nam: []const u8, args: []*JsonAstNode) !SymbolInfo {
@@ -275,12 +271,19 @@ pub const TypeChecker = struct {
                     std.debug.print("Type Error: Argument type '{any}' does not match expected type '{any}' for parameter '{s}'.\n", .{ arg_info.baseType(), param.type_name, param.nam });
                     return error.TypeMismatch;
                 }
+
+                if (arg_info.is_reference or arg_info.is_ref_mut) {
+                    if (arg_info.declaration_lifetime.? > self.env.currentLifetime()) {
+                        std.debug.print("Type Error: Argument lifetime {d} exceeds the function's lifetime.\n", .{arg_info.declaration_lifetime.?});
+                        return error.ShortLivedBorrow;
+                    }
+                }
             }
 
             if (func_sig.return_type) |return_type| {
-                return SymbolInfo.create(return_type, false);
+                return SymbolInfo.create(self.alloc, return_type, false, self.env.currentLifetime());
             } else {
-                return SymbolInfo.unit();
+                return SymbolInfo.unit(self.alloc);
             }
         } else {
             std.debug.print("Type Error: Unbound name '{s}'.\n", .{nam});
@@ -297,10 +300,23 @@ pub const TypeChecker = struct {
             },
         };
 
-        const target_info = try self.checkVal(target_name);
-        try self.env.incrementImmutableBorrow(target_name);
+        var target_info = try self.checkVal(target_name);
+        defer target_info.deinit();
+        const target_lifetime = target_info.declaration_lifetime.?; // Get the lifetime of the target
+        if (target_lifetime > self.env.currentLifetime()) {
+            std.debug.print("Lifetime Error: Cannot borrow '{s}' (declared in lifetime {d}) for lifetime {d} because it does not live long enough.\n", .{ target_name, target_lifetime, self.env.currentLifetime() });
+            return error.ShortLivedBorrow;
+        }
 
-        return SymbolInfo.createRef(target_info.baseType(), false);
+        // NOTE: Check that we cannot borrow immutably if already mutably borrowed
+        if (target_info.active_mutable_borrow != null) {
+            std.debug.print("Borrow Error: Cannot take immutable reference of a variable that is already mutably borrowed.\n", .{});
+            return error.InvalidOperation;
+        }
+
+        try self.env.incrementImmutableBorrow(target_name, self.env.currentLifetime());
+
+        return SymbolInfo.createRef(self.alloc, target_info.baseType(), false, self.env.currentLifetime());
     }
 
     fn checkBorrowMut(self: *TypeChecker, val_node: *const JsonAstNode) !SymbolInfo {
@@ -312,11 +328,33 @@ pub const TypeChecker = struct {
             },
         };
 
-        const target_info = try self.checkVal(target_name);
+        var target_info = try self.checkVal(target_name);
+        defer target_info.deinit();
+        const borrower_lifetime = self.env.currentLifetime();
+        const target_lifetime = target_info.declaration_lifetime.?;
 
-        try self.env.setMutableBorrow(target_name);
-        // TODO: Lifetime start.
+        if (target_lifetime > borrower_lifetime) {
+            std.debug.print("Lifetime Error: Cannot borrow '{s}' (declared in lifetime {d}) for lifetime {d} because it does not live long enough.\n", .{ target_name, target_lifetime, borrower_lifetime });
+            return error.ShortLivedBorrow;
+        }
 
-        return SymbolInfo.createRef(target_info.baseType(), true);
+        if (!target_info.is_mut) {
+            std.debug.print("Borrow Error: Cannot take mutable reference of an immutable variable '{s}'.\n", .{target_name});
+            return error.MutationOfImmutable;
+        }
+
+        if (target_info.active_mutable_borrow != null) {
+            std.debug.print("Borrow Error: Cannot take mutable reference of a variable that is already borrowed mutably.\n", .{});
+            return error.InvalidOperation;
+        }
+
+        if (target_info.active_immutable_borrows.items.len > 0) {
+            std.debug.print("Borrow Error: Cannot take mutable reference of a variable that is already borrowed immutably.\n", .{});
+            return error.InvalidOperation;
+        }
+
+        try self.env.setMutableBorrow(target_name, self.env.currentLifetime());
+
+        return SymbolInfo.createRef(self.alloc, target_info.baseType(), true, self.env.currentLifetime());
     }
 };
