@@ -48,14 +48,11 @@ pub const TypeEnvironment = struct {
     }
 
     pub fn deinit(self: *TypeEnvironment) void {
-        for (self.frames.items) |*frame| {
-            var iter = frame.keyIterator();
-            while (iter.next()) |key_ptr| {
-                self.alloc.free(key_ptr.*);
-            }
-            frame.deinit();
+        // Deinitialize any remaining frames (should ideally only be the global frame if used correctly)
+        while (self.frames.items.len > 0) {
+            self.popFrame(); // Use popFrame to ensure proper cleanup
         }
-        self.frames.deinit();
+        self.frames.deinit(); // Deinit the ArrayList itself
     }
 
     pub fn pushFrame(self: *TypeEnvironment) !void {
@@ -65,14 +62,24 @@ pub const TypeEnvironment = struct {
 
     pub fn popFrame(self: *TypeEnvironment) void {
         if (self.frames.items.len > 0) {
-            _ = self.frames.pop();
-            // NOTE: Zig isn't letting me free because this is an optional/const
-            // if (self.frames.pop()) |frame| {
-            //     frame.deinit();
-            // }
+            // Pop the frame from the list
+            var frame = self.frames.pop().?;
+
+            // Iterate through the keys (allocated strings) and free them
+            var iter = frame.keyIterator();
+            while (iter.next()) |key_ptr| {
+                self.alloc.free(key_ptr.*);
+            }
+
+            // Deinitialize the hash map itself
+            frame.deinit();
+
             std.debug.print("Reduce scope. Depth: {}\n", .{self.frames.items.len});
         } else {
-            @panic("Attempted to pop frame from empty or global-only environment");
+            // This case should ideally not happen if push/pop are balanced,
+            // but it's good practice to handle it.
+            std.debug.print("Warning: Attempted to pop frame from empty environment.\n", .{});
+            // @panic("Attempted to pop frame from empty or global-only environment");
         }
     }
 
@@ -114,6 +121,8 @@ pub const TypeEnvironment = struct {
 
     fn currentFrame(self: *TypeEnvironment) *TypeFrame {
         if (self.frames.items.len == 0) {
+            // This can happen if addBinding is called before the first pushFrame.
+            // Consider adding an initial frame in init or handling this case explicitly.
             @panic("Attempted to access current frame from empty environment");
         }
         return &self.frames.items[self.frames.items.len - 1];
